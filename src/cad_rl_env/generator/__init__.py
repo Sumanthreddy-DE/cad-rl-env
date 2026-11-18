@@ -37,9 +37,13 @@ def task_rng(seed: int, family: str, index: int) -> random.Random:
 
 
 def _families() -> dict[str, Callable[[random.Random], FamilySample]]:
-    from cad_rl_env.generator import plate_holes
+    from cad_rl_env.generator import bushing, flange, plate_holes
 
-    return {"plate_holes": plate_holes.generate}
+    return {
+        "plate_holes": plate_holes.generate,
+        "bushing": bushing.generate,
+        "flange": flange.generate,
+    }
 
 
 FAMILIES = _families()
