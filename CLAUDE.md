@@ -25,7 +25,7 @@ A verifiers v1 environment for single-shot text-to-CAD, where the model writes a
 ```bash
 # Test:     .venv/bin/python -m pytest -q -m "not slow"
 # Lint:     bash scripts/lint-arch.sh
-# Validate: .venv/bin/vf-validate cad-rl-env -n 5
+# Validate: .venv/bin/vf-validate cad-rl-env --runtime.type subprocess -n 5
 ```
 
 ## Rules (project overrides)

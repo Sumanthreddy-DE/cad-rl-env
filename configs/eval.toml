@@ -1,0 +1,10 @@
+# Eval: pure pass@1 (partial stays at weight 0). Model and client are set per run.
+[env.taskset]
+id = "cad-rl-env"
+split = "eval"
+
+[env.agent.runtime]
+type = "subprocess"
+
+[sampling]
+max_tokens = 4096
