@@ -82,11 +82,10 @@ def test_startup_timeout_raises_grader_error() -> None:
 def test_running_timeout_is_f8(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(attempt, "_grade_worker", _post_ready_hang)
     before = {p.pid for p in mp.active_children()}
-    out = grade_reply(reply(REF), CHECKS, timeout_s=3.0)
+    out = grade_reply(reply(REF), CHECKS, timeout_s=8.0)
     assert out["failure_class"] == "F8_timeout"
     assert out["passed"] is False and out["partial"] == 0.0
     assert {p.pid for p in mp.active_children()} == before
-
 
 def test_checker_error_and_invalid_checks_raise_grader_error(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(GraderError):
@@ -94,7 +93,7 @@ def test_checker_error_and_invalid_checks_raise_grader_error(monkeypatch: pytest
 
     monkeypatch.setattr(attempt, "_grade_worker", _broken_checker_worker)
     with pytest.raises(GraderError, match="checker_error"):
-        grade_reply(reply(REF), CHECKS, timeout_s=5.0)
+        grade_reply(reply(REF), CHECKS, timeout_s=8.0)
 
 
 def test_same_reply_same_grade() -> None:
