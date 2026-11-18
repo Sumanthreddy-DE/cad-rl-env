@@ -1,7 +1,7 @@
 # cad-rl-env Implementation Plan
 
 **Status:** active
-**Last verified:** 2026-11-14
+**Last verified:** 2026-11-18
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -41,10 +41,13 @@
 6. **Seeded RNG uses `random.Random(f"{seed}:{family}:{index}")`, not `Random(hash((seed, family, i)))`.** Python salts `hash()` of strings per process (`PYTHONHASHSEED`), so the spec's form is not reproducible across runs.
 7. **`simready/gen/build.py` has 4 OCC import lines, not 3** (BRepAlgoAPI, BRepPrimAPI, gp, STEPControl). In addition, `simready/occ_utils.py` must move to the shim, because SP1 Task 3 consumes `count_shapes`, `iter_faces` and `shape_bounding_box` from it.
 8. **The cross-check against `bench_v1.md` is not a done criterion.** Per spec D5, this repo ships before SP1 Tasks 6–11 (runner, official runs). `bench_v1.md` will likely not exist yet, and SP1 answers through a `build_part` tool call while this environment answers in text. Task C1 compares the two only if `bench_v1.md` exists, and reports the answer channel as a known difference.
+9. **SimReady dependency pin and extra (reconciled 2026-11-18).** Upstream Phase A shipped extra `bench` (not `ocp`) in `c255c60` and repaired subprocess/backend fault classification in `efe3f15cf7ce92fd2ad8bc85ef402c28091e8b50` (`sp1-bench`; `v0.5.0` predates that fix and `bench-api-0.1` was never tagged). Phase B pins `simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@efe3f15cf7ce92fd2ad8bc85ef402c28091e8b50` until immutable `v0.5.1` / `bench-checker-1.0.0` is published.
+10. **Grader infrastructure classification (reconciled 2026-11-18).** SimReady `efe3f15` emits both `INFRA = "infra_error"` and `CHECKER_ERROR = "checker_error"` with `passed=None, partial=None` and details in `report["error"]` (`build_error` is `None`); pre-`ready` startup expiry (`timeout_s=0.001`) is `infra_error`, whereas post-`ready` expiry is `F8_timeout`. `grade_reply` raises `GraderError` on both unscored classes (and invalid task `checks`), and `tests/test_grade.py` tests both pre-ready `GraderError` and post-ready `F8_timeout`.
+11. **`SYSTEM_PROMPT` exact `PartSpec` bounds (reconciled 2026-11-18).** `simready/gen/spec.py` bounds `dx, dy, dz, h` to `(0, 1000]`, `r` to `(0, 500]`, and `at` coordinates to `[-10000, 10000]` (matching SimReady `6d5fb47`). `prompt.py` states those exact bounds instead of "at most 1000" across all dimensions.
 
 ## Prerequisite gate (before Task A0)
 
-- [ ] SimReady `apply-submit-mecagent-test` is done (spec D5), or the user explicitly waives the order. Check SimReady `BACKLOG.md` on `main`. If it is still open, stop and ask.
+- [x] SimReady `apply-submit-mecagent-test` is done (spec D5; closed 2026-11-15 in SimReady `a105642`).
 
 ## File map
 
@@ -85,7 +88,9 @@ Each task below is one brief: about an hour of code or more, with tests and a fi
 
 ---
 
-## Phase A: SimReady (`sp1-bench`)
+## Phase A: SimReady (`sp1-bench`) — COMPLETED UPSTREAM (2026-11-15..17, `efe3f15`)
+
+> Completed upstream in `Mech/SimReady` on `sp1-bench`: OCC/OCP shim + Task 3 (`ca9f861`, `28afebe`), Task 4 (`5f830db`), Task 5 (`b36c625`), `pyproject.toml` with `bench` extra (`c255c60`), and attempt infrastructure repair (`efe3f15cf7ce92fd2ad8bc85ef402c28091e8b50`, 175 passed / 1 deselected under OCP). Do not re-run Phase A or merge `gpt/simready-pyproject`.
 
 ### Task A0: Workspace and environments (USER GATE)
 
@@ -566,7 +571,7 @@ requires-python = ">=3.11"
 dependencies = [
     "verifiers>=0.4.1",
     "pydantic>=2",
-    "simready[ocp] @ git+https://github.com/Sumanthreddy-DE/simready@bench-api-0.1",
+    "simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@efe3f15cf7ce92fd2ad8bc85ef402c28091e8b50",
 ]
 
 [project.optional-dependencies]
