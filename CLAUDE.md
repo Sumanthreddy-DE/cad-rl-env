@@ -1,6 +1,6 @@
 # cad-rl-env
 
-[One sentence: what this system does.]
+A verifiers v1 environment for single-shot text-to-CAD, where the model writes a part as a JSON `PartSpec` (SimReady's 4-op DSL) and SimReady's SP1 checker grades the part.
 
 ## Navigation
 
@@ -15,18 +15,17 @@
 
 ## Stack
 
-- **Language**: 
-- **Framework**: 
-- **Database**: 
-- **Package manager**: 
+- **Language**: Python 3.12
+- **Framework**: verifiers v1
+- **Database**: none
+- **Package manager**: uv
 
 ## Dev commands
 
 ```bash
-# Dev:    
-# Test:   
-# Lint:   
-# Build:  
+# Test:     .venv/bin/python -m pytest -q -m "not slow"
+# Lint:     bash scripts/lint-arch.sh
+# Validate: .venv/bin/vf-validate cad-rl-env -n 5
 ```
 
 ## Rules (project overrides)

@@ -1,0 +1,27 @@
+[project]
+name = "cad-rl-env"
+version = "0.1.0"
+description = "Text-to-CAD RL environment: a JSON CAD-DSL part graded by SimReady's geometry checker."
+requires-python = ">=3.11"
+dependencies = [
+    "verifiers>=0.4.1",
+    "pydantic>=2",
+    "simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@efe3f15cf7ce92fd2ad8bc85ef402c28091e8b50",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cad_rl_env"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: bulk generator checks (minutes)"]
