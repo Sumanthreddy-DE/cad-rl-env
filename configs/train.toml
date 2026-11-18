@@ -1,0 +1,15 @@
+# Train: dense signal on. partial = gate × fraction of checks passed (SP1 §1 rule 4).
+[env.taskset]
+id = "cad-rl-env"
+split = "train"
+n_train = 5000
+seed = 0
+
+[env.taskset.task.rewards]
+partial = { weight = 0.5 }
+
+[env.agent.runtime]
+type = "subprocess"
+
+[sampling]
+max_tokens = 4096

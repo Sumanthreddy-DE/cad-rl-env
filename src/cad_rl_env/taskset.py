@@ -27,7 +27,9 @@ class CadConfig(vf.TasksetConfig):
 def eval_tasks(config: CadConfig) -> list[CadTask]:
     from simready.bench.concepts import load_concepts
 
-    phrasings = config.phrasings or list(EVAL_PHRASINGS)
+    phrasings = list(EVAL_PHRASINGS) if config.phrasings is None else config.phrasings
+    if not phrasings:
+        raise ValueError("phrasings must not be empty")
     bad = [p for p in phrasings if p not in EVAL_PHRASINGS]
     if bad:
         raise ValueError(f"eval split supports {EVAL_PHRASINGS}, got {bad}")
@@ -55,8 +57,44 @@ def eval_tasks(config: CadConfig) -> list[CadTask]:
     return tasks
 
 
+def train_tasks(config: CadConfig) -> list[CadTask]:
+    from cad_rl_env.generator import FAMILIES, make_task
+
+    phrasings = list(TRAIN_PHRASINGS) if config.phrasings is None else config.phrasings
+    if not phrasings:
+        raise ValueError("phrasings must not be empty")
+    bad = [p for p in phrasings if p not in TRAIN_PHRASINGS]
+    if bad:
+        raise ValueError(f"train split supports {TRAIN_PHRASINGS}, got {bad}")
+    if not config.families:
+        raise ValueError("families must not be empty")
+    unknown = [f for f in config.families if f not in FAMILIES]
+    if unknown:
+        raise ValueError(f"unknown families {unknown}; known: {sorted(FAMILIES)}")
+    tasks: list[CadTask] = []
+    for i in range(config.n_train):
+        family = config.families[i % len(config.families)]
+        phrasing = phrasings[(i // len(config.families)) % len(phrasings)]
+        g = make_task(config.seed, family, i, phrasing)
+        tasks.append(
+            CadTask(
+                CadData(
+                    id=f"{family}-{config.seed}-{i}-{phrasing}",
+                    prompt=g.prompt,
+                    system_prompt=SYSTEM_PROMPT,
+                    checks=g.checks,
+                    reference_spec=g.reference_spec,
+                    split="train",
+                    source_id=f"{family}-{config.seed}-{i}",
+                    phrasing=phrasing,
+                    params={"family": family, **g.params},
+                ),
+                config.task,
+            )
+        )
+    return tasks
+
+
 class CadTaskset(vf.Taskset[CadTask, CadConfig]):
     def load(self) -> list[CadTask]:
-        if self.config.split == "eval":
-            return eval_tasks(self.config)
-        raise NotImplementedError("train split lands in Task B5")
+        return eval_tasks(self.config) if self.config.split == "eval" else train_tasks(self.config)
