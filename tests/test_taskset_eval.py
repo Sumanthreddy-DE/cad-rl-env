@@ -91,3 +91,65 @@ def test_single_turn_stop_hook() -> None:
     t = next(t for t in load() if t.data.id == "c001-explicit")
     tr = _trace_with_reply(t, None)
     assert asyncio.run(t.single_turn(tr)) is False
+
+
+def test_default_env_and_configs_use_null_harness() -> None:
+    import tomllib
+    from pathlib import Path
+    from verifiers.v1.configs.cli.run import RunnerConfig
+    from verifiers.v1.utils.loaders import load_environment
+
+    root = Path(__file__).resolve().parents[1]
+    bare = RunnerConfig.model_validate({"env": {"taskset": {"id": "cad-rl-env"}}})
+    eval_cfg = RunnerConfig.model_validate(tomllib.loads((root / "configs" / "eval.toml").read_text()))
+    train_cfg = RunnerConfig.model_validate(tomllib.loads((root / "configs" / "train.toml").read_text()))
+
+    for name, cfg in [("bare", bare), ("eval.toml", eval_cfg), ("train.toml", train_cfg)]:
+        env = load_environment(cfg.env)
+        harness = env._harnesses["agent"]
+        assert harness.config.id == "null", name
+        assert harness.EXECUTES_CODE is False, name
+        assert env.config.agent.runtime.type == "subprocess", name
+        assert env.config.agent.max_turns == 1, name
+
+
+def test_state_singleflight_and_rescore_invalidates_cached_grade(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import cad_rl_env.task as task_mod
+    from verifiers.v1.state import state_cls
+
+    t = next(t for t in load() if t.data.id == "c001-explicit")
+    calls = 0
+    real_grade = task_mod.grade_reply
+
+    def counting_grade(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return real_grade(*args, **kwargs)
+
+    monkeypatch.setattr(task_mod, "grade_reply", counting_grade)
+
+    gold_reply = "```json\n" + json.dumps(t.data.reference_spec) + "\n```"
+    tr = vf.Trace(
+        task=TraceTask(type=type(t).__name__, data=t.data, key=t.key, hash=t.hash),
+        state=state_cls(type(t))(),
+        agent=vf.AgentInfo(config=vf.AgentConfig(), name="test", trainable=False),
+        root_reply=gold_reply,
+        ok=True,
+    )
+
+    # Concurrent rewards (when metrics are skipped) still invoke grade_reply once
+    async def _both() -> tuple[float, float]:
+        return await asyncio.gather(t.passed(tr), t.partial(tr))
+
+    p_val, part_val = asyncio.run(_both())
+    assert (p_val, part_val) == (1.0, 1.0)
+    assert calls == 1
+
+    # Poison trace.info["grade"] with the same CHECKER_VERSION; rescore() must clear and regrade
+    tr.info["grade"] = {**tr.info["grade"], "passed": False, "partial": 0.0}
+    asyncio.run(t.rescore(tr))
+    assert calls == 2
+    assert tr.rewards["passed"].score == 1.0
+

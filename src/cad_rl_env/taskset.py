@@ -6,6 +6,8 @@ from typing import Literal
 
 import verifiers.v1 as vf
 from pydantic import Field
+from verifiers.v1.configs.env import SingleAgentEnvConfig
+from verifiers.v1.harnesses.null import NullHarnessConfig
 
 from cad_rl_env.prompt import SYSTEM_PROMPT
 from cad_rl_env.task import CadData, CadTask, CadTaskConfig
@@ -98,3 +100,21 @@ def train_tasks(config: CadConfig) -> list[CadTask]:
 class CadTaskset(vf.Taskset[CadTask, CadConfig]):
     def load(self) -> list[CadTask]:
         return eval_tasks(self.config) if self.config.split == "eval" else train_tasks(self.config)
+
+
+class CadEnvConfig(SingleAgentEnvConfig):
+    """Single-turn answer-only defaults: NullHarness (no bash/edit tools) on subprocess."""
+
+    agent: vf.AgentConfig = vf.AgentConfig(
+        harness=NullHarnessConfig(id="null"),
+        runtime=vf.SubprocessConfig(),
+        max_turns=1,
+    )
+
+
+class CadEnv(vf.Env[CadEnvConfig]):
+    """Single-agent text-to-CAD environment."""
+
+    async def run(self, task: vf.Task, agents: vf.Agents) -> None:
+        await agents.agent.run(task)
+

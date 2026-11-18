@@ -8,6 +8,12 @@ seed = 0
 [env.taskset.task.rewards]
 partial = { weight = 0.5 }
 
+[env.agent]
+max_turns = 1
+
+[env.agent.harness]
+id = "null"
+
 [env.agent.runtime]
 type = "subprocess"
 

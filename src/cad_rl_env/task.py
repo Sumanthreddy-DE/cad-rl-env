@@ -5,15 +5,17 @@ from __future__ import annotations
 import asyncio
 import json
 from typing import Any
+import weakref
 
 import verifiers.v1 as vf
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from cad_rl_env.grade import grade_reply
 
 _PARSE_FAILS = {"F1_no_parse"}
 _SPEC_FAILS = _PARSE_FAILS | {"F2_schema", "F3_reference", "F9_out_of_vocab"}
 _BUILD_FAILS = _SPEC_FAILS | {"F4_build_error", "F8_timeout"}
+_FALLBACK_LOCKS: dict[int, asyncio.Lock] = {}
 
 
 class CadData(vf.TaskData):
@@ -29,11 +31,28 @@ class CadData(vf.TaskData):
     params: dict[str, Any] = Field(default_factory=dict)
 
 
+class CadState(vf.State):
+    grade: dict[str, Any] | None = None
+    _lock: asyncio.Lock = PrivateAttr(default_factory=asyncio.Lock)
+
+
 class CadTaskConfig(vf.TaskConfig):
     build_timeout_s: float = 60.0
 
 
-class CadTask(vf.Task[CadData, vf.State, CadTaskConfig]):
+def _trace_lock(trace: vf.Trace) -> asyncio.Lock:
+    if isinstance(trace.state, CadState):
+        return trace.state._lock
+    key = id(trace)
+    lock = _FALLBACK_LOCKS.get(key)
+    if lock is None:
+        lock = asyncio.Lock()
+        _FALLBACK_LOCKS[key] = lock
+        weakref.finalize(trace, _FALLBACK_LOCKS.pop, key, None)
+    return lock
+
+
+class CadTask(vf.Task[CadData, CadState, CadTaskConfig]):
     @vf.stop
     async def single_turn(self, trace: vf.Trace) -> bool:
         return trace.num_turns >= 1
@@ -41,18 +60,31 @@ class CadTask(vf.Task[CadData, vf.State, CadTaskConfig]):
     async def _grade(self, trace: vf.Trace) -> dict[str, Any]:
         from simready.bench import CHECKER_VERSION
 
-        cached = trace.info.get("grade")
-        # A checker change invalidates the cache, so rescoring after a fix regrades.
-        if cached is None or cached.get("checker_version") != CHECKER_VERSION:
-            cached = await asyncio.to_thread(
-                grade_reply,
-                trace.last_reply,
-                self.data.checks,
-                self.data.expected_solids,
-                self.config.build_timeout_s,
+        async with _trace_lock(trace):
+            cached = (
+                trace.state.grade
+                if isinstance(trace.state, CadState) and trace.state.grade is not None
+                else trace.info.get("grade")
             )
+            # A checker change invalidates the cache, so rescoring after a fix regrades.
+            if cached is None or cached.get("checker_version") != CHECKER_VERSION:
+                cached = await asyncio.to_thread(
+                    grade_reply,
+                    trace.last_reply,
+                    self.data.checks,
+                    self.data.expected_solids,
+                    self.config.build_timeout_s,
+                )
+            if isinstance(trace.state, CadState):
+                trace.state.grade = cached
             trace.info["grade"] = cached
-        return cached
+            return cached
+
+    async def rescore(self, trace: vf.Trace) -> None:
+        if isinstance(trace.state, CadState):
+            trace.state.grade = None
+        trace.info.pop("grade", None)
+        await super().rescore(trace)
 
     @vf.reward(weight=1.0)
     async def passed(self, trace: vf.Trace) -> float:

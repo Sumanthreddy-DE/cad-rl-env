@@ -96,27 +96,27 @@ Each task below is one brief: about an hour of code or more, with tests and a fi
 
 **Files:** none in git.
 
-- [ ] **Step 1: Pick the worktree.** `/tmp/simready-sp1-review` is on `sp1-bench` at `58a6906`, but `/tmp` does not survive a reboot (SimReady S3 `sp1-review-worktree`). Ask the user: keep it, or `git -C ~/projects/Mech/SimReady worktree add ../SimReady-sp1 sp1-bench`. The second option creates a new top-level folder, so it needs its own yes. Record the choice as `$WT` in the task log.
-- [ ] **Step 2: Sync.** Run
+- [x] **Step 1: Pick the worktree.** `/tmp/simready-sp1-review` is on `sp1-bench` at `58a6906`, but `/tmp` does not survive a reboot (SimReady S3 `sp1-review-worktree`). Ask the user: keep it, or `git -C ~/projects/Mech/SimReady worktree add ../SimReady-sp1 sp1-bench`. The second option creates a new top-level folder, so it needs its own yes. Record the choice as `$WT` in the task log.
+- [x] **Step 2: Sync.** Run
   ```bash
   git -C "$WT" fetch origin && git -C "$WT" status -sb && git -C "$WT" rev-list --left-right --count sp1-bench...origin/sp1-bench
   ```
   Expected: clean, `0 0` (SimReady STATE says `58a6906` may be unpushed; if `1 0`, ask the user to push first). Then merge `main` (SimReady branch rule): `git -C "$WT" merge --no-edit origin/main`. If it conflicts, stop and ask.
-- [ ] **Step 3: USER GATE: create the sr env** (conda-forge pythonocc; no dotfile edits). It follows the claude-lab fresh-clone procedure `claude-lab/docs/exec-plans/completed/2026-11-03-simready-fresh-clone-test.md`:
+- [x] **Step 3: USER GATE: create the sr env** (conda-forge pythonocc; no dotfile edits). It follows the claude-lab fresh-clone procedure `claude-lab/docs/exec-plans/completed/2026-11-03-simready-fresh-clone-test.md`:
   ```bash
   export MAMBA_ROOT_PREFIX=~/simready-fresh/mamba/root PATH=~/simready-fresh/mamba/bin:$PATH
   micromamba create -y -n simready -f "$WT/environment.yml"
   micromamba run -n simready python -c "import OCC.Core.gp, pydantic; print('ok')"
   ```
   Expected: `ok`. If `pydantic` is missing, `micromamba run -n simready pip install "pydantic>=2"` (it is not in `environment.yml`; it came in through `openai`).
-- [ ] **Step 4: USER GATE: create the OCP venv:**
+- [x] **Step 4: USER GATE: create the OCP venv:**
   ```bash
   uv venv ~/simready-fresh/ocp --python 3.12
   uv pip install --python ~/simready-fresh/ocp/bin/python cadquery-ocp "pydantic>=2" pytest
   ~/simready-fresh/ocp/bin/python -c "import OCP.gp; print('ok')"
   ```
   Expected: `ok`. Never install `cadquery-ocp` into the sr env: both bundle OCCT.
-- [ ] **Step 5: Baseline.** Record both counts in the task log:
+- [x] **Step 5: Baseline.** Record both counts in the task log:
   ```bash
   cd "$WT" && micromamba run -n simready python -m pytest -q 2>&1 | tail -3
   ```
@@ -135,7 +135,7 @@ Below, `SR` means `micromamba run -n simready python` and `OCPPY` means `~/simre
 **Interfaces:**
 - Produces: `BACKEND: str | None` (`"pythonocc"`, `"ocp"` or `None`); `occ(module: str) -> ModuleType`; `static(module: str, pythonocc_name: str, ocp_class: str | None = None) -> Any`. Env var `SIMREADY_OCC_BACKEND` forces a backend.
 
-- [ ] **Step 1: Write the failing parity test**
+- [x] **Step 1: Write the failing parity test**
 
 ```python
 # tests/test_occ_compat.py
@@ -207,12 +207,12 @@ def test_box_volume_roundtrip():
     assert props.Mass() == pytest.approx(6000.0)
 ```
 
-- [ ] **Step 2: Run under both backends to verify it fails**
+- [x] **Step 2: Run under both backends to verify it fails**
 
 Run: `SR -m pytest tests/test_occ_compat.py -q` and `OCPPY -m pytest tests/test_occ_compat.py -q`
 Expected: both FAIL with `ImportError: cannot import name 'occ_compat' from 'simready'`.
 
-- [ ] **Step 3: Write the shim**
+- [x] **Step 3: Write the shim**
 
 ```python
 # simready/occ_compat.py
@@ -288,12 +288,12 @@ def static(module: str, pythonocc_name: str, ocp_class: str | None = None) -> An
     return _StaticProxy(getattr(mod, ocp_class or module))
 ```
 
-- [ ] **Step 4: Run the parity test under both backends**
+- [x] **Step 4: Run the parity test under both backends**
 
 Run: `SR -m pytest tests/test_occ_compat.py -q` then `OCPPY -m pytest tests/test_occ_compat.py -q`
 Expected: both PASS. If an OCP name differs (for example an enum not exported at module level), fix it in the shim with a named alias and add a comment naming the OCP version. Never special-case it in a caller.
 
-- [ ] **Step 5: Move `occ_utils.py` onto the shim.** Replace the `try: from OCC.Core… except ImportError: … = None` block with:
+- [x] **Step 5: Move `occ_utils.py` onto the shim.** Replace the `try: from OCC.Core… except ImportError: … = None` block with:
 
 ```python
 from simready import occ_compat
@@ -317,11 +317,11 @@ else:  # pragma: no cover — base env without OCC
 
 Keep every name the old block bound. Check with `git diff` that none was dropped. In `uv_bounds`, replace both `breptools` branches with `return tuple(float(v) for v in occ_compat.static("BRepTools", "breptools").UVBounds(face))`. Leave `shape_bounding_box` on `brepbndlib.Add`. The main pipeline's numbers depend on it, and the bbox fix belongs in `geometry.py` (Task A2).
 
-- [ ] **Step 6: Move `gen/build.py` onto the shim.** Replace lines 31–45 with the same pattern: `occ_compat.occ("BRepAlgoAPI").BRepAlgoAPI_Cut`, `…Fuse`, `occ_compat.occ("BRepPrimAPI").BRepPrimAPI_MakeBox`, `…MakeCylinder`, `occ_compat.occ("gp").gp_Ax2 / gp_Dir / gp_Pnt`, `occ_compat.occ("STEPControl").STEPControl_AsIs / STEPControl_Writer`. The `else` branch sets all nine names to `None`, as the old `except ImportError` branch did.
+- [x] **Step 6: Move `gen/build.py` onto the shim.** Replace lines 31–45 with the same pattern: `occ_compat.occ("BRepAlgoAPI").BRepAlgoAPI_Cut`, `…Fuse`, `occ_compat.occ("BRepPrimAPI").BRepPrimAPI_MakeBox`, `…MakeCylinder`, `occ_compat.occ("gp").gp_Ax2 / gp_Dir / gp_Pnt`, `occ_compat.occ("STEPControl").STEPControl_AsIs / STEPControl_Writer`. The `else` branch sets all nine names to `None`, as the old `except ImportError` branch did.
 
-- [ ] **Step 7: Regression check (sr env).** Run: `SR -m pytest -q 2>&1 | tail -3`. Expected: the same pass count as the A0 Step 5 baseline, plus the new parity tests, and 0 failed.
+- [x] **Step 7: Regression check (sr env).** Run: `SR -m pytest -q 2>&1 | tail -3`. Expected: the same pass count as the A0 Step 5 baseline, plus the new parity tests, and 0 failed.
 
-- [ ] **Step 8: Build smoke under OCP**
+- [x] **Step 8: Build smoke under OCP**
 
 Run:
 ```bash
@@ -329,7 +329,7 @@ OCPPY -c "from simready.gen.spec import PartSpec; from simready.gen.build import
 ```
 Expected: `False`. Run it from `$WT` so `simready` imports from the checkout.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git -C "$WT" add simready/occ_compat.py tests/test_occ_compat.py simready/occ_utils.py simready/gen/build.py && git -C "$WT" commit -m "feat: occ_compat shim so gen and occ_utils run on pythonocc or OCP"
@@ -345,7 +345,7 @@ git -C "$WT" add simready/occ_compat.py tests/test_occ_compat.py simready/occ_ut
 
 Follow the SP1 plan Task 3 steps and code as written, with these four deviations. Record them in the SP1 design spec under "Deviations", per its Rule 2.
 
-- [ ] **Step 1: Tests import through the shim.** In `tests/test_bench_geometry.py`, replace `pytest.importorskip("OCC.Core.BRepPrimAPI")` and the three `from OCC.Core…` lines with:
+- [x] **Step 1: Tests import through the shim.** In `tests/test_bench_geometry.py`, replace `pytest.importorskip("OCC.Core.BRepPrimAPI")` and the three `from OCC.Core…` lines with:
 
 ```python
 from simready import occ_compat
@@ -358,7 +358,7 @@ TopoDS_Shell = occ_compat.occ("TopoDS").TopoDS_Shell if occ_compat.BACKEND else 
 topods = occ_compat.static("TopoDS", "topods") if occ_compat.BACKEND else None
 ```
 
-- [ ] **Step 2: Add the bbox-gap tests** (from SimReady `sp1-task3-bbox-gap`) to `tests/test_bench_geometry.py`:
+- [x] **Step 2: Add the bbox-gap tests** (from SimReady `sp1-task3-bbox-gap`) to `tests/test_bench_geometry.py`:
 
 ```python
 def test_sorted_extents_have_no_bounding_box_gap():
@@ -375,7 +375,7 @@ def test_exact_nominal_cylinder_passes_upper_bound_range():
     assert in_range(ext[0], (19.987, 20.0)) and in_range(ext[1], (19.987, 20.0))
 ```
 
-- [ ] **Step 3: Module imports through the shim.** In `simready/bench/geometry.py`, replace the SP1 plan's `from OCC.Core…` block (plan lines 189–198) with:
+- [x] **Step 3: Module imports through the shim.** In `simready/bench/geometry.py`, replace the SP1 plan's `from OCC.Core…` block (plan lines 189–198) with:
 
 ```python
 from simready import occ_compat
@@ -403,7 +403,7 @@ grep -n "BRep_Tool\.\|topods\.\|topexp\.\|breptools\.\|brepgprop\.\|brepbndlib\.
 ```
 Each hit must use a name bound above.
 
-- [ ] **Step 4: Replace `sorted_extents`** (SP1 plan lines 833–836) with the gap-free box:
+- [x] **Step 4: Replace `sorted_extents`** (SP1 plan lines 833–836) with the gap-free box:
 
 ```python
 def sorted_extents(shape: Any) -> list[float]:
@@ -419,12 +419,12 @@ def sorted_extents(shape: Any) -> list[float]:
     return sorted([xmax - xmin, ymax - ymin, zmax - zmin])
 ```
 
-- [ ] **Step 5: Run under both backends**
+- [x] **Step 5: Run under both backends**
 
 Run: `SR -m pytest tests/test_bench_geometry.py -q` then `OCPPY -m pytest tests/test_bench_geometry.py -q`
 Expected: both PASS, including the two new tests. If the gap test fails with a residual close to 1e-7, the box still carries a gap: subtract `box.GetGap()` from each side and note that in the deviation record. Do not widen the test tolerance.
 
-- [ ] **Step 6: Commit** (geometry + tests + the SP1 spec deviation note):
+- [x] **Step 6: Commit** (geometry + tests + the SP1 spec deviation note):
 
 ```bash
 git -C "$WT" add simready/bench/geometry.py tests/test_bench_geometry.py docs/exec-plans/active/2026-09-25-sp1-cad-benchmark-design.md && git -C "$WT" commit -m "feat(bench): geometry module on occ_compat; gap-free sorted extents"
@@ -438,9 +438,9 @@ git -C "$WT" add simready/bench/geometry.py tests/test_bench_geometry.py docs/ex
 - Consumes: A2 `geometry`; `simready.bench.concepts` (`CHECK_LIST`, `in_range`, check models); `CHECKER_VERSION`.
 - Produces: `grade_shape(shape, checks, expected_solids=1) -> dict` with the keys listed in the SP1 plan Task 4 "Produces" line; constants `F5`, `F6`, `F7`, `PASS`, `FAIL`, `NOT_CHECKED`.
 
-- [ ] **Step 1:** Follow the SP1 plan Task 4 steps and code as written. The only deviation: any `importorskip("OCC…")` in the tests becomes `pytestmark = pytest.mark.skipif(occ_compat.BACKEND is None, reason="no OCC binding")`, the same as A2 Step 1.
-- [ ] **Step 2: Re-confirm the 111.** Run: `SR -m pytest tests/test_bench_reference_specs.py -q` and the same with `OCPPY`. Expected: under both backends, the 37 in-vocab references pass all three check lists (111 phrasing checks), and the Task 2 review's three negative controls fail (c001 with one 3.0 mm hole, c003 with a 6 mm seat, c039 with square corners). Record both counts in the task log. If anything differs from 111/111 now that the code is shipped, stop and report. The spec's eval split depends on it.
-- [ ] **Step 3: Commit**
+- [x] **Step 1:** Follow the SP1 plan Task 4 steps and code as written. The only deviation: any `importorskip("OCC…")` in the tests becomes `pytestmark = pytest.mark.skipif(occ_compat.BACKEND is None, reason="no OCC binding")`, the same as A2 Step 1.
+- [x] **Step 2: Re-confirm the 111.** Run: `SR -m pytest tests/test_bench_reference_specs.py -q` and the same with `OCPPY`. Expected: under both backends, the 37 in-vocab references pass all three check lists (111 phrasing checks), and the Task 2 review's three negative controls fail (c001 with one 3.0 mm hole, c003 with a 6 mm seat, c039 with square corners). Record both counts in the task log. If anything differs from 111/111 now that the code is shipped, stop and report. The spec's eval split depends on it.
+- [x] **Step 3: Commit**
 
 ```bash
 git -C "$WT" add simready/bench/checker.py tests/test_bench_checker.py tests/test_bench_reference_specs.py && git -C "$WT" commit -m "feat(bench): checker and reference-spec positive controls"
@@ -454,8 +454,8 @@ git -C "$WT" add simready/bench/checker.py tests/test_bench_checker.py tests/tes
 - Consumes: `PartSpec`, `build_shape`, `grade_shape`, `fingerprint`, `CHECK_LIST`.
 - Produces: exactly the SP1 plan Task 5 "Produces" line. cad-rl-env uses `parse_reply`, `evaluate_reply`, `grade_spec`, `F1`, `F2`, `F3`, `F4`, `F8`, `F9`, `CHECKER_ERROR`, `GRADE_TIMEOUT_S`.
 
-- [ ] **Step 1:** Follow the SP1 plan Task 5 steps and code as written. One deviation: OCC test skips use the shim, as in A2 Step 1.
-- [ ] **Step 2: Add a missing-binding test.** `_grade_worker` reports a missing OCC binding as `build_error`, which is F4, a model failure. That is the infra-as-model-failure case the cad-rl-env spec forbids. Add to `tests/test_bench_attempt.py`:
+- [x] **Step 1:** Follow the SP1 plan Task 5 steps and code as written. One deviation: OCC test skips use the shim, as in A2 Step 1.
+- [x] **Step 2: Add a missing-binding test.** `_grade_worker` reports a missing OCC binding as `build_error`, which is F4, a model failure. That is the infra-as-model-failure case the cad-rl-env spec forbids. Add to `tests/test_bench_attempt.py`:
 
 ```python
 def test_missing_occ_binding_is_checker_error_not_build_error(monkeypatch):
@@ -478,8 +478,8 @@ and, in `attempt.py`, split the worker body into a plain function `_grade_worker
 
 Record this as a deviation in the SP1 design spec. It is a correctness fix: "a crash inside our own checker must not be blamed on the model" (SP1 deviation 3).
 
-- [ ] **Step 3: Run under both backends.** Run: `SR -m pytest tests/test_bench_attempt.py -q` and the same with `OCPPY`. Expected: PASS.
-- [ ] **Step 4: Commit**
+- [x] **Step 3: Run under both backends.** Run: `SR -m pytest tests/test_bench_attempt.py -q` and the same with `OCPPY`. Expected: PASS.
+- [x] **Step 4: Commit**
 
 ```bash
 git -C "$WT" add simready/bench/attempt.py tests/test_bench_attempt.py docs/exec-plans/active/2026-09-25-sp1-cad-benchmark-design.md && git -C "$WT" commit -m "feat(bench): attempt pipeline; missing OCC binding is checker_error"
@@ -494,7 +494,7 @@ git -C "$WT" add simready/bench/attempt.py tests/test_bench_attempt.py docs/exec
 **Interfaces:**
 - Produces: `pip install "simready[ocp] @ git+https://github.com/Sumanthreddy-DE/simready@bench-api-0.1"` gives an importable `simready.bench` with `concepts_v1.jsonl` inside the wheel.
 
-- [ ] **Step 1: Write `pyproject.toml`**
+- [x] **Step 1: Write `pyproject.toml`**
 
 ```toml
 [project]
@@ -526,7 +526,7 @@ packages = ["simready"]
 
 Before writing `app`, re-check every pin against `requirements.txt` on the merged branch. The `openai` cap comes from SimReady merge `57a105e`. Copy, never retype.
 
-- [ ] **Step 2: Wheel check (positive control)**
+- [x] **Step 2: Wheel check (positive control)**
 
 Run:
 ```bash
@@ -534,15 +534,15 @@ cd "$WT" && uv build --wheel -o /tmp/claude-sr-wheel && python3 -m zipfile -l /t
 ```
 Expected: `3`.
 
-- [ ] **Step 3: Clean install under OCP.** Run: `uv venv /tmp/claude-sr-clean --python 3.12 && uv pip install --python /tmp/claude-sr-clean/bin/python "/tmp/claude-sr-wheel/simready-0.1.0-py3-none-any.whl[ocp]" && cd /tmp && /tmp/claude-sr-clean/bin/python -c "from simready.bench.concepts import load_concepts; print(sum(c.in_vocab for c in load_concepts()))"`. Expected: `37`. Running from `/tmp` proves the import comes from the wheel, not the checkout. This venv lives in `/tmp` and is throwaway, so it needs no gate. Delete it after.
-- [ ] **Step 4: Full suites.** Run: `SR -m pytest -q 2>&1 | tail -3` (0 failed) and `OCPPY -m pytest tests/test_occ_compat.py tests/test_bench_*.py -q` (0 failed).
-- [ ] **Step 5: Commit and tag**
+- [x] **Step 3: Clean install under OCP.** Run: `uv venv /tmp/claude-sr-clean --python 3.12 && uv pip install --python /tmp/claude-sr-clean/bin/python "/tmp/claude-sr-wheel/simready-0.1.0-py3-none-any.whl[ocp]" && cd /tmp && /tmp/claude-sr-clean/bin/python -c "from simready.bench.concepts import load_concepts; print(sum(c.in_vocab for c in load_concepts()))"`. Expected: `37`. Running from `/tmp` proves the import comes from the wheel, not the checkout. This venv lives in `/tmp` and is throwaway, so it needs no gate. Delete it after.
+- [x] **Step 4: Full suites.** Run: `SR -m pytest -q 2>&1 | tail -3` (0 failed) and `OCPPY -m pytest tests/test_occ_compat.py tests/test_bench_*.py -q` (0 failed).
+- [x] **Step 5: Commit and tag**
 
 ```bash
 git -C "$WT" add pyproject.toml README.md && git -C "$WT" commit -m "build: pyproject with light core and ocp extra" && git -C "$WT" tag bench-api-0.1
 ```
 
-- [ ] **Step 6: Hand the push to the user.** The tag must be on `origin` before Phase B can install from git:
+- [x] **Step 6: Hand the push to the user.** The tag must be on `origin` before Phase B can install from git:
   ```
   ! git -C "<WT>" push origin sp1-bench bench-api-0.1
   ```
@@ -560,7 +560,7 @@ Below, `PY` means `.venv/bin/python` in `/home/sumanth/projects/cad-rl-env`.
 - Create: `pyproject.toml`, `.gitignore`, `src/cad_rl_env/__init__.py` (temporary: empty)
 - Modify: `CLAUDE.md` (Stack + Dev commands)
 
-- [ ] **Step 1: `pyproject.toml`**
+- [x] **Step 1: `pyproject.toml`**
 
 ```toml
 [project]
@@ -592,8 +592,8 @@ testpaths = ["tests"]
 markers = ["slow: bulk generator checks (minutes)"]
 ```
 
-- [ ] **Step 2: `.gitignore`:** `.venv/`, `__pycache__/`, `outputs/`, `dist/`, `*.egg-info/`.
-- [ ] **Step 3: USER GATE: venv**
+- [x] **Step 2: `.gitignore`:** `.venv/`, `__pycache__/`, `outputs/`, `dist/`, `*.egg-info/`.
+- [x] **Step 3: USER GATE: venv**
 
 ```bash
 cd /home/sumanth/projects/cad-rl-env && uv venv --python 3.12 && uv pip install -e ".[dev]"
@@ -601,8 +601,8 @@ cd /home/sumanth/projects/cad-rl-env && uv venv --python 3.12 && uv pip install 
 ```
 Expected: `ocp`.
 
-- [ ] **Step 4: `CLAUDE.md`.** Fill in **Language** Python 3.12, **Framework** verifiers v1, **Database** none, **Package manager** uv. Dev commands: `Test: .venv/bin/python -m pytest -q -m "not slow"`, `Lint: bash scripts/lint-arch.sh`, `Validate: .venv/bin/vf-validate cad-rl-env -n 5`. Also replace the `[One sentence…]` line with the spec's first sentence.
-- [ ] **Step 5: Commit**
+- [x] **Step 4: `CLAUDE.md`.** Fill in **Language** Python 3.12, **Framework** verifiers v1, **Database** none, **Package manager** uv. Dev commands: `Test: .venv/bin/python -m pytest -q -m "not slow"`, `Lint: bash scripts/lint-arch.sh`, `Validate: .venv/bin/vf-validate cad-rl-env -n 5`. Also replace the `[One sentence…]` line with the spec's first sentence.
+- [x] **Step 5: Commit**
 
 ```bash
 git add pyproject.toml .gitignore src/cad_rl_env/__init__.py CLAUDE.md && git commit -m "build: package skeleton"
@@ -618,7 +618,7 @@ git add pyproject.toml .gitignore src/cad_rl_env/__init__.py CLAUDE.md && git co
 - Consumes: `simready.bench.attempt.parse_reply, evaluate_reply, grade_spec, CHECKER_ERROR`; `simready.bench.concepts.CHECK_LIST`; `simready.occ_compat.BACKEND`.
 - Produces: `class GraderError(RuntimeError)`; `grade_reply(reply: str | None, checks: list[dict], expected_solids: int = 1, timeout_s: float = 60.0) -> dict`. The dict is `evaluate_reply`'s output plus `"checker_version": str`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/test_grade.py
@@ -697,9 +697,9 @@ def test_missing_binding_raises(monkeypatch):
 
 `test_wrong_plate_size_is_dimension_miss` accepts F6 or F7. Moving the plate edge leaves the holes in place, so whether the envelope or the pattern check fires first is SimReady's ordering, not this repo's concern.
 
-- [ ] **Step 2: Run to verify it fails.** Run: `PY -m pytest tests/test_grade.py -q`. Expected: FAIL with `ModuleNotFoundError: No module named 'cad_rl_env.grade'`.
+- [x] **Step 2: Run to verify it fails.** Run: `PY -m pytest tests/test_grade.py -q`. Expected: FAIL with `ModuleNotFoundError: No module named 'cad_rl_env.grade'`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```python
 # src/cad_rl_env/grade.py
@@ -745,8 +745,8 @@ def grade_reply(
     return {**report, "checker_version": CHECKER_VERSION}
 ```
 
-- [ ] **Step 4: Run tests.** Run: `PY -m pytest tests/test_grade.py -q`. Expected: PASS (10 tests).
-- [ ] **Step 5: Commit**
+- [x] **Step 4: Run tests.** Run: `PY -m pytest tests/test_grade.py -q`. Expected: PASS (10 tests).
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/cad_rl_env/grade.py tests/test_grade.py && git commit -m "feat: grade_reply adapter over simready.bench.attempt"
@@ -763,7 +763,7 @@ git add src/cad_rl_env/grade.py tests/test_grade.py && git commit -m "feat: grad
 - Consumes: B1 `grade_reply`, `GraderError`; `simready.bench.concepts.load_concepts, PHRASINGS`.
 - Produces: `SYSTEM_PROMPT: str`; `CadData(vf.TaskData)` with fields `checks: list[dict]`, `expected_solids: int`, `reference_spec: dict | None`, `split: str`, `source_id: str`, `phrasing: str`, `params: dict`; `CadTaskConfig(vf.TaskConfig)` with `build_timeout_s: float = 60.0`; `CadTask`; `CadConfig(vf.TasksetConfig)` with `split`, `seed`, `n_train`, `families`, `phrasings`, `task`; `CadTaskset`; `eval_tasks(config) -> list[CadTask]`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/test_taskset_eval.py
@@ -791,9 +791,9 @@ def test_eval_phrasing_filter():
     assert len(load(phrasings=["engineer"])) == 37
 ```
 
-- [ ] **Step 2: Run to verify it fails.** Run: `PY -m pytest tests/test_taskset_eval.py -q`. Expected: FAIL with `ModuleNotFoundError: No module named 'cad_rl_env.taskset'`.
+- [x] **Step 2: Run to verify it fails.** Run: `PY -m pytest tests/test_taskset_eval.py -q`. Expected: FAIL with `ModuleNotFoundError: No module named 'cad_rl_env.taskset'`.
 
-- [ ] **Step 3: `prompt.py`.** The grammar is copied from `simready/gen/spec.py`'s docstring and bounds. If SimReady's SP1 Task 6 has shipped `simready.bench.prompting.SYSTEM_PROMPT` by now, still use this text-answer prompt: SP1's asks for a `build_part` tool call, and this environment is text-only (deviation 8).
+- [x] **Step 3: `prompt.py`.** The grammar is copied from `simready/gen/spec.py`'s docstring and bounds. If SimReady's SP1 Task 6 has shipped `simready.bench.prompting.SYSTEM_PROMPT` by now, still use this text-answer prompt: SP1's asks for a `build_part` tool call, and this environment is text-only (deviation 8).
 
 ```python
 # src/cad_rl_env/prompt.py
@@ -816,7 +816,7 @@ Reply with exactly one ```json fenced block containing the part. If the part can
 these operations, say so instead of approximating it."""
 ```
 
-- [ ] **Step 4: `task.py`**
+- [x] **Step 4: `task.py`**
 
 ```python
 # src/cad_rl_env/task.py
@@ -906,7 +906,7 @@ class CadTask(vf.Task[CadData, vf.State, CadTaskConfig]):
         return bool(grade["passed"])
 ```
 
-- [ ] **Step 5: `taskset.py` (eval part; B5 adds train)**
+- [x] **Step 5: `taskset.py` (eval part; B5 adds train)**
 
 ```python
 # src/cad_rl_env/taskset.py
@@ -977,13 +977,13 @@ from cad_rl_env.taskset import CadTaskset
 __all__ = ["CadTaskset"]
 ```
 
-- [ ] **Step 6: Run the tests.** Run: `PY -m pytest tests/test_taskset_eval.py -q`. Expected: PASS. If `CadData(id=…)` is rejected, read `verifiers/v1/task.py` (`TaskData`) at the installed version for the id field's real name, and fix the plan text as well (Rule 2).
-- [ ] **Step 7: `vf-validate` with both controls.** First check the flags: `.venv/bin/vf-validate cad-rl-env --help` (read the whole output; never `head` it). Then:
+- [x] **Step 6: Run the tests.** Run: `PY -m pytest tests/test_taskset_eval.py -q`. Expected: PASS. If `CadData(id=…)` is rejected, read `verifiers/v1/task.py` (`TaskData`) at the installed version for the id field's real name, and fix the plan text as well (Rule 2).
+- [x] **Step 7: `vf-validate` with both controls.** First check the flags: `.venv/bin/vf-validate cad-rl-env --help` (read the whole output; never `head` it). Then:
   ```bash
   .venv/bin/vf-validate cad-rl-env --env.taskset.split eval
   ```
   Expected: 111 gold checks pass (the reference scores `passed = 1.0`), and 111 noop checks are valid (the untouched reply scores 0). Any gold failure stops the task. It means the eval split disagrees with A3's 111.
-- [ ] **Step 8: `configs/eval.toml`**
+- [x] **Step 8: `configs/eval.toml`**
 
 ```toml
 # Eval: pure pass@1 (partial stays at weight 0). Model and client are set per run.
@@ -997,7 +997,7 @@ max_tokens = 4096
 
 Confirm the key names against `vf-run cad-rl-env --help`.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/cad_rl_env/__init__.py src/cad_rl_env/prompt.py src/cad_rl_env/task.py src/cad_rl_env/taskset.py configs/eval.toml tests/test_taskset_eval.py && git commit -m "feat: eval split over concepts_v1 with passed/partial rewards"
@@ -1018,7 +1018,7 @@ git add src/cad_rl_env/__init__.py src/cad_rl_env/prompt.py src/cad_rl_env/task.
   - `make_task(seed: int, family: str, index: int, phrasing: str) -> GeneratedTask`;
   - `leak.signature(checks: list[dict]) -> Signature`, `leak.collides(a, b) -> bool`, `leak.eval_signatures() -> list[Signature]`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/test_leak.py
@@ -1098,9 +1098,9 @@ def test_guard_positive_control():
 
 Remove the unused `FAMILIES` and `task_rng` imports from this file.
 
-- [ ] **Step 2: Run to verify they fail.** Run: `PY -m pytest tests/test_leak.py tests/test_generator_plate_holes.py -q`. Expected: FAIL with `ModuleNotFoundError`.
+- [x] **Step 2: Run to verify they fail.** Run: `PY -m pytest tests/test_leak.py tests/test_generator_plate_holes.py -q`. Expected: FAIL with `ModuleNotFoundError`.
 
-- [ ] **Step 3: `generator/standards.py` and `generator/_checks.py`**
+- [x] **Step 3: `generator/standards.py` and `generator/_checks.py`**
 
 ```python
 # src/cad_rl_env/generator/standards.py
@@ -1167,7 +1167,7 @@ def cut_chain(base: dict, tools: list[dict]) -> dict:
     return {"steps": steps}
 ```
 
-- [ ] **Step 4: `generator/plate_holes.py`**
+- [x] **Step 4: `generator/plate_holes.py`**
 
 ```python
 # src/cad_rl_env/generator/plate_holes.py
@@ -1247,7 +1247,7 @@ def generate(rng: random.Random) -> FamilySample:
     )
 ```
 
-- [ ] **Step 5: `generator/__init__.py`**
+- [x] **Step 5: `generator/__init__.py`**
 
 ```python
 # src/cad_rl_env/generator/__init__.py
@@ -1316,7 +1316,7 @@ def make_task(seed: int, family: str, index: int, phrasing: str) -> GeneratedTas
 
 The guard compares on the *explicit* checks for both phrasings. Explicit midpoints are the nominal part, so a train engineer prompt can never describe an eval part either.
 
-- [ ] **Step 6: `leak.py`**
+- [x] **Step 6: `leak.py`**
 
 ```python
 # src/cad_rl_env/leak.py
@@ -1386,8 +1386,8 @@ def eval_signatures() -> tuple[Signature, ...]:
 
 `eval_signatures` returns a tuple. `len()` works, so `test_eval_signatures_cover_37_concepts` is unchanged.
 
-- [ ] **Step 7: Run the tests.** Run: `PY -m pytest tests/test_leak.py tests/test_generator_plate_holes.py -q`. Expected: PASS. A reference that fails its own checks is a generator bug: fix the generator, never the checks.
-- [ ] **Step 8: Commit**
+- [x] **Step 7: Run the tests.** Run: `PY -m pytest tests/test_leak.py tests/test_generator_plate_holes.py -q`. Expected: PASS. A reference that fails its own checks is a generator bug: fix the generator, never the checks.
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/cad_rl_env/generator src/cad_rl_env/leak.py tests/test_leak.py tests/test_generator_plate_holes.py && git commit -m "feat: seeded generator core, leak guard, plate_holes family"
@@ -1404,7 +1404,7 @@ git add src/cad_rl_env/generator src/cad_rl_env/leak.py tests/test_leak.py tests
 - Consumes: B3 `FamilySample`, `_checks`, `ISO273`.
 - Produces: `bushing.generate(rng) -> FamilySample`, `flange.generate(rng) -> FamilySample`; `FAMILIES` keys `plate_holes`, `bushing`, `flange`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/test_generator_families.py
@@ -1435,9 +1435,9 @@ def test_flange_engineer_names_pitch_circle():
     assert "pitch circle" in t.prompt and "ISO 273" in t.prompt
 ```
 
-- [ ] **Step 2: Run to verify it fails.** Run: `PY -m pytest tests/test_generator_families.py -q`. Expected: FAIL with `KeyError: 'bushing'`.
+- [x] **Step 2: Run to verify it fails.** Run: `PY -m pytest tests/test_generator_families.py -q`. Expected: FAIL with `KeyError: 'bushing'`.
 
-- [ ] **Step 3: `bushing.py`**
+- [x] **Step 3: `bushing.py`**
 
 ```python
 # src/cad_rl_env/generator/bushing.py
@@ -1499,7 +1499,7 @@ def generate(rng: random.Random) -> FamilySample:
     )
 ```
 
-- [ ] **Step 4: `flange.py`**
+- [x] **Step 4: `flange.py`**
 
 ```python
 # src/cad_rl_env/generator/flange.py
@@ -1599,7 +1599,7 @@ def generate(rng: random.Random) -> FamilySample:
 
 Step bookkeeping: the loop appends the tool cylinder first, so `len(steps) - 2` is the previous result and `len(steps) - 1` is the new tool. Steps = 5 + 2n ≤ 13.
 
-- [ ] **Step 5: Register both** in `_families()`:
+- [x] **Step 5: Register both** in `_families()`:
 
 ```python
 def _families() -> dict[str, Callable[[random.Random], FamilySample]]:
@@ -1608,8 +1608,8 @@ def _families() -> dict[str, Callable[[random.Random], FamilySample]]:
     return {"plate_holes": plate_holes.generate, "bushing": bushing.generate, "flange": flange.generate}
 ```
 
-- [ ] **Step 6: Run the tests.** Run: `PY -m pytest tests/test_generator_families.py -q`. Expected: PASS. If a flange boss check fails, check SimReady's own `test_stacked_flange_bosses_and_bore` (A2) for how fused disc and hub faces are reported. Fix the *generator's* checks to the documented SimReady semantics, and never edit SimReady from this task.
-- [ ] **Step 7: Commit**
+- [x] **Step 6: Run the tests.** Run: `PY -m pytest tests/test_generator_families.py -q`. Expected: PASS. If a flange boss check fails, check SimReady's own `test_stacked_flange_bosses_and_bore` (A2) for how fused disc and hub faces are reported. Fix the *generator's* checks to the documented SimReady semantics, and never edit SimReady from this task.
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/cad_rl_env/generator tests/test_generator_families.py && git commit -m "feat: bushing and flange families"
@@ -1626,7 +1626,7 @@ git add src/cad_rl_env/generator tests/test_generator_families.py && git commit 
 - Consumes: B3/B4 `make_task`, `FAMILIES`.
 - Produces: `train_tasks(config: CadConfig) -> list[CadTask]`. Task i gets family `families[i % F]` and phrasing `phrasings[(i // F) % P]`, with id `f"{family}-{seed}-{i}-{phrasing}"`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/test_taskset_train.py
@@ -1688,9 +1688,9 @@ def test_bulk_self_check_and_no_leak(family):
     assert failures == [], failures[:10]
 ```
 
-- [ ] **Step 2: Run to verify it fails.** Run: `PY -m pytest tests/test_taskset_train.py -q`. Expected: FAIL with `NotImplementedError: train split lands in Task B5`.
+- [x] **Step 2: Run to verify it fails.** Run: `PY -m pytest tests/test_taskset_train.py -q`. Expected: FAIL with `NotImplementedError: train split lands in Task B5`.
 
-- [ ] **Step 3: Implement `train_tasks` and update `load`**
+- [x] **Step 3: Implement `train_tasks` and update `load`**
 
 ```python
 def train_tasks(config: CadConfig) -> list[CadTask]:
@@ -1729,14 +1729,14 @@ def train_tasks(config: CadConfig) -> list[CadTask]:
 
 `load` becomes `return eval_tasks(self.config) if self.config.split == "eval" else train_tasks(self.config)`.
 
-- [ ] **Step 4: Run the fast tests.** Run: `PY -m pytest -q -m "not slow"`. Expected: PASS.
-- [ ] **Step 5: Run the bulk test once.** Run it detached with a log, because it builds 6,000 shapes in subprocesses:
+- [x] **Step 4: Run the fast tests.** Run: `PY -m pytest -q -m "not slow"`. Expected: PASS.
+- [x] **Step 5: Run the bulk test once.** Run it detached with a log, because it builds 6,000 shapes in subprocesses:
   ```bash
   nohup .venv/bin/python -m pytest -q -m slow tests/test_generator_bulk.py > outputs/bulk.log 2>&1 &
   ```
   Expected in `outputs/bulk.log`: `3 passed`. Record the wall time. If a family has failures, fix that family and re-run only that parametrisation.
-- [ ] **Step 6: `vf-validate` on train.** Run: `.venv/bin/vf-validate cad-rl-env --env.taskset.split train --env.taskset.n-train 30`. Expected: 30 gold pass, 30 noop valid.
-- [ ] **Step 7: `configs/train.toml`**
+- [x] **Step 6: `vf-validate` on train.** Run: `.venv/bin/vf-validate cad-rl-env --env.taskset.split train --env.taskset.n-train 30`. Expected: 30 gold pass, 30 noop valid.
+- [x] **Step 7: `configs/train.toml`**
 
 ```toml
 # Train: dense signal on. partial = gate × fraction of checks passed (SP1 §1 rule 4).
@@ -1750,7 +1750,7 @@ seed = 0
 partial = { weight = 0.5 }
 ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/cad_rl_env/taskset.py configs/train.toml tests/test_taskset_train.py tests/test_generator_bulk.py && git commit -m "feat: seeded train split with bulk self-check"
@@ -1764,7 +1764,7 @@ git add src/cad_rl_env/taskset.py configs/train.toml tests/test_taskset_train.py
 **Interfaces:**
 - Consumes: B1 `grade_reply`; `load_concepts`; B3/B4 `make_task`.
 
-- [ ] **Step 1: Write the suite**
+- [x] **Step 1: Write the suite**
 
 ```python
 # tests/test_redteam.py
@@ -1887,10 +1887,10 @@ def test_known_weak_still_passes(name, make, cid, phrasing):
     assert passed(make(), checks(cid, phrasing)), f"{name}: now caught; move it to ADVERSARIAL and update README"
 ```
 
-- [ ] **Step 2: Run.** Run: `PY -m pytest tests/test_redteam.py -q -v`. Expected: every ADVERSARIAL case and every generated case PASS, which means the cheat fails. The KNOWN_WEAK case PASS means the cheat still passes.
+- [x] **Step 2: Run.** Run: `PY -m pytest tests/test_redteam.py -q -v`. Expected: every ADVERSARIAL case and every generated case PASS, which means the cheat fails. The KNOWN_WEAK case PASS means the cheat still passes.
   - An adversarial cheat that scores `passed`: do not weaken the test. Report it, and decide with the user whether it is a SimReady check gap (add to KNOWN_WEAK, and file a SimReady BACKLOG item on `main`) or a generator check bug (fix here).
   - Before adding the other Task 2 review weak cases (c023 any 30 mm block, c047 axial-hole fake, c048 no gradable check), read each concept's intent checks and write the concrete cheat spec against them. Add each one only once it really passes. The review's wording is a lead, not proof (Working Rule 7).
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/test_redteam.py && git commit -m "test: red-team suite and known weak checks"
@@ -1902,7 +1902,7 @@ git add tests/test_redteam.py && git commit -m "test: red-team suite and known w
 - Create: `README.md`
 - Modify: `scripts/lint-arch.sh` only if `src` is missing from `SRC_DIRS` (it is present as of 2026-11-14)
 
-- [ ] **Step 1: Write `README.md`.** The Hub displays this file. Sections, in order:
+- [x] **Step 1: Write `README.md`.** The Hub displays this file. Sections, in order:
   1. One-paragraph summary.
   2. **Task format:** the DSL and the single-turn JSON answer.
   3. **Splits:** `eval` (111, never train on it) and `train` (seeded generator).
@@ -1914,8 +1914,8 @@ git add tests/test_redteam.py && git commit -m "test: red-team suite and known w
   9. **Provenance:** SimReady, the checker tag `bench-api-0.1`, and the concept sources.
 
   Every command in the README must have been run (global Working Rule 4).
-- [ ] **Step 2: Lint and tests.** Run: `bash scripts/lint-arch.sh && PY -m pytest -q -m "not slow"`. Expected: `lint-arch: PASS` and 0 failed.
-- [ ] **Step 3: Commit**
+- [x] **Step 2: Lint and tests.** Run: `bash scripts/lint-arch.sh && PY -m pytest -q -m "not slow"`. Expected: `lint-arch: PASS` and 0 failed.
+- [x] **Step 3: Commit**
 
 ```bash
 git add README.md && git commit -m "docs: README for the Hub page"

@@ -3,6 +3,12 @@
 id = "cad-rl-env"
 split = "eval"
 
+[env.agent]
+max_turns = 1
+
+[env.agent.harness]
+id = "null"
+
 [env.agent.runtime]
 type = "subprocess"
 

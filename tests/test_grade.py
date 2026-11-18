@@ -98,3 +98,24 @@ def test_missing_binding_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(g.occ_compat, "BACKEND", None)
     with pytest.raises(GraderError):
         grade_reply(reply(REF), CHECKS)
+
+
+def test_unhashable_op_is_schema_failure_not_type_error() -> None:
+    for bad_op in (["box"], {"type": "box"}):
+        out = grade_reply(reply({"steps": [{"op": bad_op, "dx": 1, "dy": 1, "dz": 1}]}), CHECKS)
+        assert out["failure_class"] == "F2_schema"
+        assert out["passed"] is False and out["partial"] == 0.0
+
+
+def test_deeply_nested_json_is_no_parse_not_recursion_error() -> None:
+    nested = '{"spec":' * 1200 + '{"steps":[]}' + "}" * 1200
+    out = grade_reply("```json\n" + nested + "\n```", CHECKS)
+    assert out["failure_class"] == "F1_no_parse"
+    assert out["passed"] is False and out["partial"] == 0.0
+
+
+def test_non_string_reply_raises_type_error() -> None:
+    for bad_reply in (123, [], {}):
+        with pytest.raises(TypeError):
+            grade_reply(bad_reply, CHECKS)  # type: ignore[arg-type]
+
