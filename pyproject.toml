@@ -1,6 +1,6 @@
 [project]
 name = "cad-rl-env"
-version = "0.1.0"
+version = "0.1.1"
 description = "Text-to-CAD RL environment: a JSON CAD-DSL part graded by SimReady's geometry checker."
 requires-python = ">=3.11"
 dependencies = [
