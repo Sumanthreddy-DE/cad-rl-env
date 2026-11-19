@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "verifiers>=0.4.1",
     "pydantic>=2",
-    "simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@efe3f15cf7ce92fd2ad8bc85ef402c28091e8b50",
+    "simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@v0.5.1",
 ]
 
 [project.optional-dependencies]

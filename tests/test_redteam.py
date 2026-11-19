@@ -96,6 +96,17 @@ def c014_swapped_plate_axes() -> dict:
     return spec
 
 
+def c047_axial_hole() -> dict:
+    # Axial bore instead of a cross-drilled hole; caught since simready 0.5.1.
+    return {
+        "steps": [
+            {"op": "cyl", "r": 5.0, "h": 50.0},
+            {"op": "cyl", "r": 1.5, "h": 50.0},
+            {"op": "cut", "a": 0, "b": 1},
+        ]
+    }
+
+
 ADVERSARIAL = [
     ("c001 plate without holes", c001_plate_only, "c001", "explicit"),
     ("c001 three of four holes", c001_three_holes, "c001", "explicit"),
@@ -106,6 +117,7 @@ ADVERSARIAL = [
     ("c004 solid rod, no bore", c004_solid_rod, "c004", "explicit"),
     ("c004 square tube, right envelope", c004_square_tube, "c004", "explicit"),
     ("c014 plate dimensions swapped across axes", c014_swapped_plate_axes, "c014", "explicit"),
+    ("c047 explicit (OOV): axial hole instead of cross hole", c047_axial_hole, "c047", "explicit"),
 ]
 
 
@@ -149,18 +161,6 @@ KNOWN_WEAK = [
         lambda: {"steps": [{"op": "box", "dx": 30, "dy": 30, "dz": 30}]},
         "c023",
         "intent",
-    ),
-    (
-        "c047 explicit (OOV): axial hole passes cross-drilled shaft checks",
-        lambda: {
-            "steps": [
-                {"op": "cyl", "r": 5.0, "h": 50.0},
-                {"op": "cyl", "r": 1.5, "h": 50.0},
-                {"op": "cut", "a": 0, "b": 1},
-            ]
-        },
-        "c047",
-        "explicit",
     ),
     (
         "c048 intent: solid cube passes (no gradable check)",

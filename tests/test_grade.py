@@ -110,7 +110,8 @@ def test_unhashable_op_is_schema_failure_not_type_error() -> None:
 def test_deeply_nested_json_is_no_parse_not_recursion_error() -> None:
     nested = '{"spec":' * 1200 + '{"steps":[]}' + "}" * 1200
     out = grade_reply("```json\n" + nested + "\n```", CHECKS)
-    assert out["failure_class"] == "F1_no_parse"
+    # simready >= 0.5.1 skips the too-deep prefixes and recovers the inner empty spec.
+    assert out["failure_class"] == "F2_schema"
     assert out["passed"] is False and out["partial"] == 0.0
 
 

@@ -52,7 +52,7 @@ Every failed model attempt receives one primary failure class from SimReady's SP
 
 ## Reward-hacking table
 
-Measured directly by `tests/test_redteam.py` against the installed `simready[bench]` checker (`CHECKER_VERSION = "1.0.0-dev"`):
+Measured directly by `tests/test_redteam.py` against the installed `simready[bench]` checker (`CHECKER_VERSION = "1.0.0"`):
 
 | Category | Case (`tests/test_redteam.py`) | Target | `passed` | `partial` | `failure_class` |
 |---|---|---|---|---|---|
@@ -65,15 +65,15 @@ Measured directly by `tests/test_redteam.py` against the installed `simready[ben
 | Adversarial | `c004 solid rod, no bore` | `c004-explicit` | `False` | `0.667` | `F6_dimension_miss` |
 | Adversarial | `c004 square tube, right envelope` | `c004-explicit` | `False` | `0.667` | `F6_dimension_miss` |
 | Adversarial | `c014 plate dimensions swapped across axes` | `c014-explicit` | `False` | `0.500` | `F7_feature_miss` |
+| Adversarial | `c047 explicit (OOV): axial hole instead of cross hole` | `c047-explicit` *(excluded from `eval`)* | `False` | `0.750` | `F6_dimension_miss` |
 | Generated adversarial | `generated flange without hub (h=0.5)` | `flange-0-explicit` | `False` | `0.600` | `F6_dimension_miss` |
 | Generated adversarial | `generated plate wrong hole pitch (+1.0 mm)` | `plate_holes-0-explicit` | `False` | `0.500` | `F7_feature_miss` |
 | Generated adversarial | `generated bushing wrong bolt size (+1.5 mm r)` | `bushing-0-engineer` | `False` | `0.667` | `F6_dimension_miss` |
 | Known weak check | `c010 intent: blank plate passes (slots unseen)` | `c010-intent` | `True` | `1.000` | `None` |
 | Known weak check | `c023 intent: plain 30 mm cube passes (steps unseen)` | `c023-intent` | `True` | `1.000` | `None` |
-| Known weak check | `c047 explicit (OOV): axial hole passes cross-drilled shaft checks` | `c047-explicit` *(excluded from `eval`)* | `True` | `1.000` | `None` |
 | Known weak check | `c048 intent: solid cube passes (no gradable check)` | `c048-intent` | `True` | `1.000` | `None` |
 
-The four `KNOWN_WEAK` rows document real v1 checker blind spots identified during SimReady's SP1 Task 2 review (partial-cylinder stadium slots, ungraded step treads on open-ended `intent` prompts, hole axis orientation on out-of-vocab `c047`, and `c048-intent` having only `not_checked`). They are asserted in `tests/test_redteam.py` so any upstream check addition in SimReady immediately surfaces here; note also why `eval` keeps `partial` weight at `0.0` (several failed cheats achieve `partial` between `0.333` and `0.667` by matching bounding-box envelopes alone).
+The three `KNOWN_WEAK` rows document real v1 checker blind spots identified during SimReady's SP1 Task 2 review (partial-cylinder stadium slots, ungraded step treads on open-ended `intent` prompts, and `c048-intent` having only `not_checked`). A fourth, the axial-hole cheat on out-of-vocab `c047`, is caught since SimReady `v0.5.1` and moved to the adversarial rows. The `KNOWN_WEAK` rows are asserted in `tests/test_redteam.py` so any upstream check addition in SimReady immediately surfaces here; note also why `eval` keeps `partial` weight at `0.0` (several failed cheats achieve `partial` between `0.333` and `0.750` by matching bounding-box envelopes alone).
 
 ## Results
 
@@ -125,6 +125,6 @@ bash scripts/lint-arch.sh
 
 ## Provenance
 
-- **Upstream checker & benchmark:** [Sumanthreddy-DE/simready](https://github.com/Sumanthreddy-DE/simready), installed via `simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@efe3f15cf7ce92fd2ad8bc85ef402c28091e8b50` (`CHECKER_VERSION = "1.0.0-dev"`, OpenCASCADE via pip `cadquery-ocp`). `cad-rl-env` imports `simready.bench` and `simready.gen` directly and copies neither check logic nor `concepts_v1.jsonl`.
+- **Upstream checker & benchmark:** [Sumanthreddy-DE/simready](https://github.com/Sumanthreddy-DE/simready), installed via `simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@v0.5.1` (`CHECKER_VERSION = "1.0.0"`, OpenCASCADE via pip `cadquery-ocp`). `cad-rl-env` imports `simready.bench` and `simready.gen` directly and copies neither check logic nor `concepts_v1.jsonl`.
 - **Trusted DSL execution:** Follows SimReady ADR 0001 — models emit schema-validated JSON (`PartSpec`) executed by `simready.gen.build.build_shape` inside a killable `spawn` worker with atomic mailbox supervision.
 - **Engineering standards in `concepts_v1` and `train`:** ISO 273:1979 fastener clearance holes (`M2.5`–`M8` in `train`), plus ISO 286-2 limits and fits, ISO 7089 / DIN 125-1 washers, DIN 705 shaft collars, DIN 988 shim rings, ISO 4379 sleeve bushes, EN 60423 cable glands, NEMA 17 / NEMA 23 motor mounts, 608 bearings, HIWIN MGN12H carriages, Arduino Uno R3, and Raspberry Pi 4 mechanical drawings in `eval`.
