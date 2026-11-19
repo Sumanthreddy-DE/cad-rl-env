@@ -1,7 +1,7 @@
 # cad-rl-env Implementation Plan
 
-**Status:** active
-**Last verified:** 2026-11-18
+**Status:** done
+**Last verified:** 2026-11-19
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -1956,12 +1956,14 @@ git add README.md && git commit -m "docs: README for the Hub page"
 
 ### Task C3: Audit and go public (USER GATE)
 
-- [ ] **Step 1:** Credential and PII history audit per global Working Rule 3, in both directions:
+> **Done 2026-11-19 (Rule 2 deviations):** audit clean (no credential values or third-party PII in history). Public history is a filtered copy of `main` (branch `public`, built by `scripts/make-public.sh`) without the kickoff brief and working files; `main` stays local. Renamed to `text-to-cad-rl` everywhere and added MIT license (`0.1.2`). Public at https://github.com/Sumanthreddy-DE/text-to-cad-rl and Hub `sumanth/text-to-cad-rl`; old `sumanth/cad-rl-env` deleted. Step 3 (Mercor link) is the user's; Step 4's SimReady `cad-rl-env-ownership` close is left to a SimReady or claude-lab session (cross-repo rule).
+
+- [x] **Step 1:** Credential and PII history audit per global Working Rule 3, in both directions:
   - every `.env` value checked against `git log --all -S`;
   - every commit message and file in history grepped for names, phones and emails.
-- [ ] **Step 2:** The user creates the GitHub repo and makes it public, and makes the Hub environment public. This is one decision covering both, never one without the other.
+- [x] **Step 2:** The user creates the GitHub repo and makes it public, and makes the Hub environment public. This is one decision covering both, never one without the other.
 - [ ] **Step 3:** The user adds the repo link to the Mercor application (Engineering Expert talent network).
-- [ ] **Step 4:** Move this plan and the design spec to `docs/exec-plans/completed/` with `Status: done`. Close `cad-rl-env-ownership` in SimReady `BACKLOG.md` on `main`.
+- [x] **Step 4:** Move this plan and the design spec to `docs/exec-plans/completed/` with `Status: done`. Close `cad-rl-env-ownership` in SimReady `BACKLOG.md` on `main`.
 
 ---
 

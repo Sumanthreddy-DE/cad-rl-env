@@ -1,7 +1,7 @@
 # cad-rl-env: design
 
-**Status:** active
-**Last verified:** 2026-11-14
+**Status:** done
+**Last verified:** 2026-11-19
 
 A verifiers v1 environment for single-shot text-to-CAD. The model writes a part as a JSON
 `PartSpec` (SimReady's 4-op DSL). SimReady's SP1 checker grades the part. The environment is
