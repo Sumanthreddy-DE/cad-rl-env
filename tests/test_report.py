@@ -16,7 +16,7 @@ _SPEC.loader.exec_module(report)
 def episode(model: str, task_id: str, phrasing: str, passed: float, fc: str | None,
             out_tok: int = 100, ok: bool = True) -> dict:
     trace = {
-        "run": {"name": f"cad-rl-env--{model}--null--abcd"},
+        "run": {"name": f"text-to-cad-rl--{model}--null--abcd"},
         "task": {"data": {"id": task_id, "phrasing": phrasing}},
         "rewards": {"passed": {"score": passed, "weight": 1.0}},
         "info": {"grade": {"failure_class": fc}},

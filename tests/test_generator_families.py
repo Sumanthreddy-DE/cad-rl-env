@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from cad_rl_env.generator import FAMILIES, make_task
-from cad_rl_env.grade import grade_reply
+from text_to_cad_rl.generator import FAMILIES, make_task
+from text_to_cad_rl.grade import grade_reply
 
 
 def test_three_families_registered() -> None:

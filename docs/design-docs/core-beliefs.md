@@ -1,4 +1,4 @@
-# Core beliefs: cad-rl-env
+# Core beliefs: text-to-cad-rl
 
 Operating principles for agents working in this repo. Override global defaults where listed.
 

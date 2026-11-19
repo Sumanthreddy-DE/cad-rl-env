@@ -37,7 +37,7 @@ def task_rng(seed: int, family: str, index: int) -> random.Random:
 
 
 def _families() -> dict[str, Callable[[random.Random], FamilySample]]:
-    from cad_rl_env.generator import bushing, flange, plate_holes
+    from text_to_cad_rl.generator import bushing, flange, plate_holes
 
     return {
         "plate_holes": plate_holes.generate,
@@ -50,7 +50,7 @@ FAMILIES = _families()
 
 
 def make_task(seed: int, family: str, index: int, phrasing: str) -> GeneratedTask:
-    from cad_rl_env.leak import collides, eval_signatures, signature
+    from text_to_cad_rl.leak import collides, eval_signatures, signature
 
     if phrasing not in PHRASINGS:
         raise ValueError(f"train phrasing must be one of {PHRASINGS}, got {phrasing!r}")

@@ -15,9 +15,9 @@ from simready.bench.attempt import (
     validate_grade_result,
 )
 
-from cad_rl_env.generator import FAMILIES, make_task
-from cad_rl_env.grade import GraderError, grade_reply
-from cad_rl_env.leak import collides, eval_signatures, signature
+from text_to_cad_rl.generator import FAMILIES, make_task
+from text_to_cad_rl.grade import GraderError, grade_reply
+from text_to_cad_rl.leak import collides, eval_signatures, signature
 
 N = 1000
 SUBPROCESS_SPOT_N = 15

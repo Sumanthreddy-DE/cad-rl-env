@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from cad_rl_env.leak import collides, eval_signatures, signature
+from text_to_cad_rl.leak import collides, eval_signatures, signature
 
 PLATE = [
     {"type": "bbox_sorted", "ranges": [[4.9, 5.1], [41.9, 42.1], [41.9, 42.1]]},
@@ -31,7 +31,7 @@ def test_eval_signatures_cover_37_concepts() -> None:
 
 
 def test_generator_shaped_checks_collide_with_eval_parts() -> None:
-    from cad_rl_env.generator._checks import EXPLICIT_TOL, bbox_sorted, hole_set, tol
+    from text_to_cad_rl.generator._checks import EXPLICIT_TOL, bbox_sorted, hole_set, tol
 
     sigs = eval_signatures()
 

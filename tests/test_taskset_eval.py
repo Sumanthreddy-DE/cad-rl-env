@@ -8,7 +8,7 @@ import pytest
 import verifiers.v1 as vf
 from verifiers.v1.trace import TraceTask
 
-from cad_rl_env.taskset import CadConfig, CadTaskset
+from text_to_cad_rl.taskset import CadConfig, CadTaskset
 
 
 def load(**kw):
@@ -100,7 +100,7 @@ def test_default_env_and_configs_use_null_harness() -> None:
     from verifiers.v1.utils.loaders import load_environment
 
     root = Path(__file__).resolve().parents[1]
-    bare = RunnerConfig.model_validate({"env": {"taskset": {"id": "cad-rl-env"}}})
+    bare = RunnerConfig.model_validate({"env": {"taskset": {"id": "text-to-cad-rl"}}})
     eval_cfg = RunnerConfig.model_validate(tomllib.loads((root / "configs" / "eval.toml").read_text()))
     train_cfg = RunnerConfig.model_validate(tomllib.loads((root / "configs" / "train.toml").read_text()))
 
@@ -116,7 +116,7 @@ def test_default_env_and_configs_use_null_harness() -> None:
 def test_state_singleflight_and_rescore_invalidates_cached_grade(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import cad_rl_env.task as task_mod
+    import text_to_cad_rl.task as task_mod
     from verifiers.v1.state import state_cls
 
     t = next(t for t in load() if t.data.id == "c001-explicit")

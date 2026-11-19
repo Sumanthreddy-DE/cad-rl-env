@@ -1,6 +1,8 @@
-# cad-rl-env
+# text-to-cad-rl
 
-`cad-rl-env` is a [verifiers v1](https://github.com/PrimeIntellect-ai/verifiers) reinforcement-learning and evaluation environment for single-shot text-to-CAD. Given a natural-language mechanical-part specification, the model replies in one turn with a JSON `PartSpec` in [SimReady](https://github.com/Sumanthreddy-DE/simready)'s 4-operation constructive solid geometry DSL; SimReady's OpenCASCADE (OCCT) B-rep geometry checker builds the solid in an isolated subprocess and grades dimensional and feature conformance directly on the 3D shape. No model-written Python code is ever executed.
+[Prime Intellect Hub](https://app.primeintellect.ai/dashboard/environments/sumanth/text-to-cad-rl) · [GitHub](https://github.com/Sumanthreddy-DE/text-to-cad-rl)
+
+`text-to-cad-rl` is a [verifiers v1](https://github.com/PrimeIntellect-ai/verifiers) reinforcement-learning and evaluation environment for single-shot text-to-CAD. Given a natural-language mechanical-part specification, the model replies in one turn with a JSON `PartSpec` in [SimReady](https://github.com/Sumanthreddy-DE/simready)'s 4-operation constructive solid geometry DSL; SimReady's OpenCASCADE (OCCT) B-rep geometry checker builds the solid in an isolated subprocess and grades dimensional and feature conformance directly on the 3D shape. No model-written Python code is ever executed.
 
 ## Task format
 
@@ -99,7 +101,7 @@ Run on 2026-11-19 with `configs/eval.toml`: all 111 `eval` tasks, `k = 5` rollou
 - **The explicit - engineer gap opens on smaller models.** At the frontier the gap is 3.2% and 4.9%, and both CIs include zero. Here every model's gap CI excludes zero, and the gap grows as `pass@1` falls (14.1% to 48.5%). Explicit prompts state every dimension; engineer prompts name standards and fits (for example the `D12` bore of a DIN 988 shim) that the model must resolve to numbers. That resolution step is the skill this environment rewards.
 - **Most failures are geometry, not format.** `F6_dimension_miss` and `F7_feature_miss` dominate for every model. Every `F1_no_parse` for `deepseek-v4.1-flash-1017`, `glm-5.3-flash` and `qwen3.8-27b` is a reply that hit the 16384-token cap during reasoning (the "hit token cap" column). For `nemotron-3-nano-omni-30b-a3b-reasoning`, 7 of its 61 `F1_no_parse` replies hit the cap; the rest returned no parsable `PartSpec`.
 - **Excluded episodes:** 2 of 2,220. One was a provider `502`. The other exposed a SimReady checker bug: a spec that cuts a shape from itself builds an empty solid, and the checker raises `checker_error` instead of returning `F5_invalid_solid`. It is filed upstream as `empty-solid-checker-error`.
-- **Answer-channel difference:** `bench_v1` collects answers through a tool call; `cad-rl-env` reads the `PartSpec` from the single-turn text reply used for RL rollouts. The prompts, checks and checker are the same, but the numbers are not a like-for-like comparison.
+- **Answer-channel difference:** `bench_v1` collects answers through a tool call; `text-to-cad-rl` reads the `PartSpec` from the single-turn text reply used for RL rollouts. The prompts, checks and checker are the same, but the numbers are not a like-for-like comparison.
 
 ## Install and run
 
@@ -113,17 +115,17 @@ uv pip install -e ".[dev]"
 ### Prime Intellect Environments Hub install (once published)
 
 ```bash
-prime env install <owner>/cad-rl-env
+prime env install sumanth/text-to-cad-rl
 ```
 
 ### Validate gold and noop controls (no model calls)
 
 ```bash
 # All 111 held-out eval tasks
-.venv/bin/vf-validate cad-rl-env --runtime.type subprocess --taskset.split eval -c 6
+.venv/bin/vf-validate text-to-cad-rl --runtime.type subprocess --taskset.split eval -c 6
 
 # Sample of 30 procedurally generated train tasks
-.venv/bin/vf-validate cad-rl-env --runtime.type subprocess --taskset.split train --taskset.n-train 30 -c 6
+.venv/bin/vf-validate text-to-cad-rl --runtime.type subprocess --taskset.split train --taskset.n-train 30 -c 6
 ```
 
 ### Run evaluations or dry-run configs
@@ -147,6 +149,6 @@ bash scripts/lint-arch.sh
 
 ## Provenance
 
-- **Upstream checker & benchmark:** [Sumanthreddy-DE/simready](https://github.com/Sumanthreddy-DE/simready), installed via `simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@v0.5.1` (`CHECKER_VERSION = "1.0.0"`, OpenCASCADE via pip `cadquery-ocp`). `cad-rl-env` imports `simready.bench` and `simready.gen` directly and copies neither check logic nor `concepts_v1.jsonl`.
+- **Upstream checker & benchmark:** [Sumanthreddy-DE/simready](https://github.com/Sumanthreddy-DE/simready), installed via `simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@v0.5.1` (`CHECKER_VERSION = "1.0.0"`, OpenCASCADE via pip `cadquery-ocp`). `text-to-cad-rl` imports `simready.bench` and `simready.gen` directly and copies neither check logic nor `concepts_v1.jsonl`.
 - **Trusted DSL execution:** Follows SimReady ADR 0001 — models emit schema-validated JSON (`PartSpec`) executed by `simready.gen.build.build_shape` inside a killable `spawn` worker with atomic mailbox supervision.
 - **Engineering standards in `concepts_v1` and `train`:** ISO 273:1979 fastener clearance holes (`M2.5`–`M8` in `train`), plus ISO 286-2 limits and fits, ISO 7089 / DIN 125-1 washers, DIN 705 shaft collars, DIN 988 shim rings, ISO 4379 sleeve bushes, EN 60423 cable glands, NEMA 17 / NEMA 23 motor mounts, 608 bearings, HIWIN MGN12H carriages, Arduino Uno R3, and Raspberry Pi 4 mechanical drawings in `eval`.

@@ -1,4 +1,4 @@
-# cad-rl-env — Context
+# text-to-cad-rl — Context
 
 ## Domain Glossary
 _Term_ — _Definition. Use this term, and note synonyms that would cause confusion._

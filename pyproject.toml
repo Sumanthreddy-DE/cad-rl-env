@@ -1,13 +1,19 @@
 [project]
-name = "cad-rl-env"
+name = "text-to-cad-rl"
 version = "0.1.1"
-description = "Text-to-CAD RL environment: a JSON CAD-DSL part graded by SimReady's geometry checker."
+description = "RL environment for text-to-CAD: models write a part as a JSON CAD program, graded on real OpenCASCADE B-rep geometry (dimensions, holes, features). verifiers v1, Prime Intellect Hub."
+tags = ["single-turn", "v1", "eval", "train", "3d", "cad", "verifiable", "rl-environment", "engineering"]
+keywords = ["reinforcement-learning", "rl-environment", "text-to-cad", "cad", "llm-evaluation", "verifiers", "opencascade", "brep", "mechanical-engineering"]
 requires-python = ">=3.11"
 dependencies = [
     "verifiers>=0.4.1",
     "pydantic>=2",
     "simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@v0.5.1",
 ]
+
+[project.urls]
+Repository = "https://github.com/Sumanthreddy-DE/text-to-cad-rl"
+Hub = "https://app.primeintellect.ai/dashboard/environments/sumanth/text-to-cad-rl"
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
@@ -20,7 +26,7 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["cad_rl_env"]
+packages = ["text_to_cad_rl"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

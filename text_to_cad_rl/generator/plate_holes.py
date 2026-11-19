@@ -5,8 +5,8 @@ from __future__ import annotations
 import math
 import random
 
-from cad_rl_env.generator import FamilySample
-from cad_rl_env.generator._checks import (
+from text_to_cad_rl.generator import FamilySample
+from text_to_cad_rl.generator._checks import (
     EXPLICIT_TOL,
     PATTERN_TOL_ENGINEER,
     bbox_sorted,
@@ -14,7 +14,7 @@ from cad_rl_env.generator._checks import (
     hole_set,
     tol,
 )
-from cad_rl_env.generator.standards import ISO273
+from text_to_cad_rl.generator.standards import ISO273
 
 EXPLICIT = [
     "Make a {w} x {d} x {t} mm plate with {holes} {dia} mm through holes {layout}.",

@@ -7,7 +7,7 @@ import pytest
 from simready.bench import attempt
 from simready.bench.concepts import load_concepts
 
-from cad_rl_env.grade import GraderError, grade_reply
+from text_to_cad_rl.grade import GraderError, grade_reply
 from tests._worker_stubs import broken_checker_worker, post_ready_hang
 
 C001 = next(c for c in load_concepts() if c.concept_id == "c001")
@@ -93,7 +93,7 @@ def test_same_reply_same_grade() -> None:
 
 
 def test_missing_binding_raises(monkeypatch: pytest.MonkeyPatch) -> None:
-    import cad_rl_env.grade as g
+    import text_to_cad_rl.grade as g
 
     monkeypatch.setattr(g.occ_compat, "BACKEND", None)
     with pytest.raises(GraderError):

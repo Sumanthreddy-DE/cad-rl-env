@@ -5,9 +5,9 @@ from __future__ import annotations
 import math
 import random
 
-from cad_rl_env.generator import FamilySample
-from cad_rl_env.generator._checks import EXPLICIT_TOL, bbox_sorted, cut_chain, tol
-from cad_rl_env.generator.standards import ISO273
+from text_to_cad_rl.generator import FamilySample
+from text_to_cad_rl.generator._checks import EXPLICIT_TOL, bbox_sorted, cut_chain, tol
+from text_to_cad_rl.generator.standards import ISO273
 
 EXPLICIT = [
     "Model a round tube {od} mm outside diameter, {bore} mm inside diameter and {length} mm long.",

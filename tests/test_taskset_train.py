@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from cad_rl_env.taskset import CadConfig, CadTaskset
+from text_to_cad_rl.taskset import CadConfig, CadTaskset
 
 
 def load(**kw):

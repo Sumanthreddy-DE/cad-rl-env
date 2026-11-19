@@ -13,8 +13,8 @@ import json
 import pytest
 from simready.bench.concepts import load_concepts
 
-from cad_rl_env.generator import make_task
-from cad_rl_env.grade import grade_reply
+from text_to_cad_rl.generator import make_task
+from text_to_cad_rl.grade import grade_reply
 
 CONCEPTS = {c.concept_id: c for c in load_concepts()}
 

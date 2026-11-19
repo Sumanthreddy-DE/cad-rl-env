@@ -1,6 +1,6 @@
 # Train: dense signal on. partial = gate × fraction of checks passed (SP1 §1 rule 4).
 [env.taskset]
-id = "cad-rl-env"
+id = "text-to-cad-rl"
 split = "train"
 n_train = 5000
 seed = 0

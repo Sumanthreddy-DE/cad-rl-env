@@ -1,4 +1,4 @@
-# Architecture: cad-rl-env
+# Architecture: text-to-cad-rl
 
 ## Domain
 
@@ -23,7 +23,7 @@ Cross-cutting (auth, logging, telemetry) → inject via provider/DI, not direct 
 ## Package map
 
 ```
-cad_rl_env/          — the verifiers environment package (flat layout, see decision log)
+text_to_cad_rl/          — the verifiers environment package (flat layout, see decision log)
 ├── grade.py         — adapter over simready.bench.attempt
 ├── prompt.py, task.py, taskset.py — prompt, CadTask, CadTaskset, CadEnv
 ├── leak.py          — train/eval leak checks
@@ -41,3 +41,4 @@ cad_rl_env/          — the verifiers environment package (flat layout, see dec
 
 <!-- YYYY-MM-DD — decision — why (one line each) -->
 2026-11-19 — package moved from `src/cad_rl_env/` to `cad_rl_env/` — `prime env push` 0.22.1 rejects a repo with no root-level `.py` file or package.
+2026-11-19 — renamed `cad-rl-env` / `cad_rl_env` to `text-to-cad-rl` / `text_to_cad_rl` — clearer name for GitHub and Hub search; nothing linked to the old name yet.

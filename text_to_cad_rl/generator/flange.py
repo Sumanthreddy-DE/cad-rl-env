@@ -6,15 +6,15 @@ import math
 import random
 from typing import Any
 
-from cad_rl_env.generator import FamilySample
-from cad_rl_env.generator._checks import (
+from text_to_cad_rl.generator import FamilySample
+from text_to_cad_rl.generator._checks import (
     EXPLICIT_TOL,
     PATTERN_TOL_ENGINEER,
     bbox_sorted,
     hole_set,
     tol,
 )
-from cad_rl_env.generator.standards import ISO273
+from text_to_cad_rl.generator.standards import ISO273
 
 BOLT_THREADS = ["M4", "M5", "M6"]
 EXPLICIT = [

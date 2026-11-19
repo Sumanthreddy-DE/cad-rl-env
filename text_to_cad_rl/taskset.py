@@ -1,4 +1,4 @@
-"""cad-rl-env taskset: ``eval`` = SimReady concepts_v1 in-vocab, ``train`` = generator."""
+"""text-to-cad-rl taskset: ``eval`` = SimReady concepts_v1 in-vocab, ``train`` = generator."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ from pydantic import Field
 from verifiers.v1.configs.env import SingleAgentEnvConfig
 from verifiers.v1.harnesses.null import NullHarnessConfig
 
-from cad_rl_env.prompt import SYSTEM_PROMPT
-from cad_rl_env.task import CadData, CadTask, CadTaskConfig
+from text_to_cad_rl.prompt import SYSTEM_PROMPT
+from text_to_cad_rl.task import CadData, CadTask, CadTaskConfig
 
 EVAL_PHRASINGS = ("explicit", "engineer", "intent")
 TRAIN_PHRASINGS = ("explicit", "engineer")
@@ -60,7 +60,7 @@ def eval_tasks(config: CadConfig) -> list[CadTask]:
 
 
 def train_tasks(config: CadConfig) -> list[CadTask]:
-    from cad_rl_env.generator import FAMILIES, make_task
+    from text_to_cad_rl.generator import FAMILIES, make_task
 
     phrasings = list(TRAIN_PHRASINGS) if config.phrasings is None else config.phrasings
     if not phrasings:

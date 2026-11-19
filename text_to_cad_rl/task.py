@@ -10,7 +10,7 @@ import weakref
 import verifiers.v1 as vf
 from pydantic import Field, PrivateAttr
 
-from cad_rl_env.grade import grade_reply
+from text_to_cad_rl.grade import grade_reply
 
 _PARSE_FAILS = {"F1_no_parse"}
 _SPEC_FAILS = _PARSE_FAILS | {"F2_schema", "F3_reference", "F9_out_of_vocab"}
