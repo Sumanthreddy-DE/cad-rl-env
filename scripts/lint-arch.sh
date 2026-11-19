@@ -6,7 +6,7 @@
 
 set -e
 PASS=true
-SRC_DIRS=("src" "app" "lib")   # edit for this project's source directories
+SRC_DIRS=("cad_rl_env" "scripts")   # edit for this project's source directories
 
 echo "=== lint-arch ==="
 

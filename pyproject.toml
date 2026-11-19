@@ -20,7 +20,7 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/cad_rl_env"]
+packages = ["cad_rl_env"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

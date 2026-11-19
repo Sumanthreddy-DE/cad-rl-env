@@ -23,9 +23,11 @@ Cross-cutting (auth, logging, telemetry) → inject via provider/DI, not direct 
 ## Package map
 
 ```
-src/
-├── [domain]/   — [what it owns]
-└── shared/     — types and utils shared across domains
+cad_rl_env/          — the verifiers environment package (flat layout, see decision log)
+├── grade.py         — adapter over simready.bench.attempt
+├── prompt.py, task.py, taskset.py — prompt, CadTask, CadTaskset, CadEnv
+├── leak.py          — train/eval leak checks
+└── generator/       — seeded train-task generator over ISO 273 tables
 ```
 
 ## Enforced invariants
@@ -38,3 +40,4 @@ src/
 ## Decision log
 
 <!-- YYYY-MM-DD — decision — why (one line each) -->
+2026-11-19 — package moved from `src/cad_rl_env/` to `cad_rl_env/` — `prime env push` 0.22.1 rejects a repo with no root-level `.py` file or package.
