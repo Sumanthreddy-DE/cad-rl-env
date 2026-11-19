@@ -47,6 +47,7 @@ def test_summarise_three_trace_fixture(traces_file: Path) -> None:
     assert s["gap"] == pytest.approx(0.5)
     assert s["failures"] == {"F6_dimension_miss": 1, "F1_no_parse": 1}
     assert s["hit_token_cap"] == 1
+    assert s["gap_ci"] == (pytest.approx(0.5), pytest.approx(0.5))  # one concept: no spread
 
 
 def test_errored_episode_is_excluded_not_scored(tmp_path: Path) -> None:

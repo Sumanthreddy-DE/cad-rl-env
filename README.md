@@ -77,7 +77,29 @@ The three `KNOWN_WEAK` rows document real v1 checker blind spots identified duri
 
 ## Results
 
-Live model evaluation runs (`pass@1`, `pass@5`, `explicit - engineer` gap, and failure-class distribution) are scheduled in Phase C (Task C1) once API run budgets are approved. SimReady's own SP1 benchmark runner (`bench_v1.md`, tool-calling channel) remains the canonical benchmark record; `cad-rl-env` evaluates the single-turn text-JSON channel used for RL rollouts.
+Run on 2026-11-19 with `configs/eval.toml`: all 111 `eval` tasks, `k = 5` rollouts each (`pass@k` is `pass@5`), `temperature = 0.7`, `max_tokens = 16384`, Vultr Inference (`https://api.vultrinference.com/v1`), `simready` `v0.5.1`, `CHECKER_VERSION = "1.0.0"`. Gap CIs are paired 95% bootstrap intervals over the 37 concepts. Reproduce the tables with `.venv/bin/python scripts/report.py outputs/<run>/traces.jsonl`.
+
+| model | episodes | pass@1 | pass@k | explicit | engineer | intent | gap (explicit - engineer) | gap 95% CI | hit token cap | excluded |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `deepseek-v4.1-flash-1017` | 555 | 91.5% | 98.2% | 100.0% | 85.9% | 88.6% | 14.1% | [5.9%, 23.8%] | 3 | 0 |
+| `glm-5.3-flash` | 555 | 86.8% | 96.4% | 98.9% | 76.2% | 85.4% | 22.7% | [11.9%, 34.6%] | 16 | 0 |
+| `qwen3.8-27b` | 555 | 74.4% | 79.3% | 96.8% | 57.3% | 69.2% | 39.5% | [22.7%, 55.7%] | 44 | 0 |
+| `nemotron-3-nano-omni-30b-a3b-reasoning` | 555 | 43.6% | 66.7% | 71.7% | 23.2% | 35.9% | 48.5% | [35.1%, 61.1%] | 7 | 2 |
+
+| model | `F1_no_parse` | `F2_schema` | `F3_reference` | `F5_invalid_solid` | `F6_dimension_miss` | `F7_feature_miss` | `F9_out_of_vocab` |
+|---|---|---|---|---|---|---|---|
+| `deepseek-v4.1-flash-1017` | 3 | 1 | 0 | 0 | 28 | 15 | 0 |
+| `glm-5.3-flash` | 16 | 0 | 1 | 0 | 34 | 22 | 0 |
+| `qwen3.8-27b` | 44 | 0 | 0 | 0 | 64 | 34 | 0 |
+| `nemotron-3-nano-omni-30b-a3b-reasoning` | 61 | 2 | 19 | 12 | 139 | 78 | 1 |
+
+**Reading the results**
+
+- **The environment has headroom below the frontier.** SimReady's [`bench_v1`](https://github.com/Sumanthreddy-DE/simready/blob/v0.5.1/docs/validation/bench_v1.md) measured the same 111 prompts and checker on two frontier models: `gpt-6.1-sol` 96.2% and `gemini-4-argon` 95.5% `pass@1`. The small open models here range from 43.6% to 91.5%.
+- **The explicit - engineer gap opens on smaller models.** At the frontier the gap is 3.2% and 4.9%, and both CIs include zero. Here every model's gap CI excludes zero, and the gap grows as `pass@1` falls (14.1% to 48.5%). Explicit prompts state every dimension; engineer prompts name standards and fits (for example the `D12` bore of a DIN 988 shim) that the model must resolve to numbers. That resolution step is the skill this environment rewards.
+- **Most failures are geometry, not format.** `F6_dimension_miss` and `F7_feature_miss` dominate for every model. Every `F1_no_parse` for `deepseek-v4.1-flash-1017`, `glm-5.3-flash` and `qwen3.8-27b` is a reply that hit the 16384-token cap during reasoning (the "hit token cap" column). For `nemotron-3-nano-omni-30b-a3b-reasoning`, 7 of its 61 `F1_no_parse` replies hit the cap; the rest returned no parsable `PartSpec`.
+- **Excluded episodes:** 2 of 2,220. One was a provider `502`. The other exposed a SimReady checker bug: a spec that cuts a shape from itself builds an empty solid, and the checker raises `checker_error` instead of returning `F5_invalid_solid`. It is filed upstream as `empty-solid-checker-error`.
+- **Answer-channel difference:** `bench_v1` collects answers through a tool call; `cad-rl-env` reads the `PartSpec` from the single-turn text reply used for RL rollouts. The prompts, checks and checker are the same, but the numbers are not a like-for-like comparison.
 
 ## Install and run
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,27 @@ def load(paths: list[Path]) -> list[dict[str, Any]]:
 
 def _model(trace: dict[str, Any]) -> str:
     return trace["run"]["name"].split("--")[1]
+
+
+def _gap_ci(scored: list[dict[str, Any]], n_boot: int = 2000) -> tuple[float, float]:
+    """95% bootstrap CI of the explicit - engineer gap, resampling concepts (paired)."""
+    per: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for t in scored:
+        data = t["task"]["data"]
+        per[data["id"].split("-")[0]][data["phrasing"]].append(t["rewards"]["passed"]["score"])
+    concepts = [c for c, ph in per.items() if ph["explicit"] and ph["engineer"]]
+    if not concepts:
+        return 0.0, 0.0
+    diffs = {
+        c: sum(per[c]["explicit"]) / len(per[c]["explicit"])
+        - sum(per[c]["engineer"]) / len(per[c]["engineer"])
+        for c in concepts
+    }
+    rng = random.Random(0)
+    boots = sorted(
+        sum(diffs[rng.choice(concepts)] for _ in concepts) / len(concepts) for _ in range(n_boot)
+    )
+    return boots[int(0.025 * n_boot)], boots[int(0.975 * n_boot) - 1]
 
 
 def summarise(traces: list[dict[str, Any]], max_tokens: int) -> dict[str, dict[str, Any]]:
@@ -56,6 +78,7 @@ def summarise(traces: list[dict[str, Any]], max_tokens: int) -> dict[str, dict[s
             "pass@k": sum(per_task.values()) / len(per_task) if per_task else 0.0,
             "by_phrasing": by_phrasing,
             "gap": by_phrasing.get("explicit", 0.0) - by_phrasing.get("engineer", 0.0),
+            "gap_ci": _gap_ci(scored),
             "failures": dict(failures),
             "hit_token_cap": sum(t["num_output_tokens"] >= max_tokens for t in scored),
             "mean_output_tokens": (
@@ -72,8 +95,8 @@ def _pct(x: float) -> str:
 def markdown(summary: dict[str, dict[str, Any]]) -> str:
     lines = [
         "| model | episodes | pass@1 | pass@k | explicit | engineer | intent "
-        "| gap (explicit - engineer) | hit token cap | excluded |",
-        "|---|---|---|---|---|---|---|---|---|---|",
+        "| gap (explicit - engineer) | gap 95% CI | hit token cap | excluded |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for model, s in sorted(summary.items(), key=lambda kv: -kv[1]["pass@1"]):
         ph = s["by_phrasing"]
@@ -81,6 +104,7 @@ def markdown(summary: dict[str, dict[str, Any]]) -> str:
             f"| `{model}` | {s['episodes']} | {_pct(s['pass@1'])} | {_pct(s['pass@k'])} "
             f"| {_pct(ph.get('explicit', 0))} | {_pct(ph.get('engineer', 0))} "
             f"| {_pct(ph.get('intent', 0))} | {_pct(s['gap'])} "
+            f"| [{_pct(s['gap_ci'][0])}, {_pct(s['gap_ci'][1])}] "
             f"| {s['hit_token_cap']} | {s['excluded']} |"
         )
     classes = sorted({fc for s in summary.values() for fc in s["failures"]})
