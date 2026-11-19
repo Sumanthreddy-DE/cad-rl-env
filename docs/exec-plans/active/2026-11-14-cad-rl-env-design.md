@@ -8,8 +8,8 @@ A verifiers v1 environment for single-shot text-to-CAD. The model writes a part 
 published on Prime Intellect's Environments Hub as proof of work for a Mercor domain-expert
 application (computational engineering).
 
-Brainstormed and approved section by section with the user on 2026-11-14. Kickoff brief:
-`2026-11-14-kickoff.md` (same folder). Facts below were checked against disk and live docs on
+Brainstormed and approved section by section with the user on 2026-11-14. The kickoff brief
+is an internal working note and is not published. Facts below were checked against disk and live docs on
 2026-11-14; corrections to the brief are listed in § Brief corrections.
 
 ## Brief corrections (verified 2026-11-14)
@@ -102,7 +102,6 @@ choices `not_checked`, so many correct parts exist; IoU would punish valid alter
    `pyproject.toml`, a tag.
 3. This repo.
 
-The Mercor application runs in parallel (kickoff decision 4).
 
 **Rejected:** building this repo now against a stubbed checker interface. Task 3/4 signatures
 are plan code until written, so the interface would drift.
