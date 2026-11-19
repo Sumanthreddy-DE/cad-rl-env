@@ -1948,9 +1948,11 @@ git add README.md && git commit -m "docs: README for the Hub page"
 
 ### Task C2: Private Hub push (USER GATE: outward-facing)
 
-- [ ] **Step 1:** The user runs `prime login`. Check that the username is set on the profile.
-- [ ] **Step 2:** The user runs `prime env push --visibility=PRIVATE` from the repo root. Claude supplies the exact command after checking `prime env push --help`.
-- [ ] **Step 3:** Hub smoke, in a throwaway venv in `/tmp`: `prime env install <owner>/cad-rl-env`, then `vf-validate cad-rl-env -n 5`. Expected: gold pass and noop valid, which proves the pip-only install pulls `simready[ocp]` from the git tag.
+> **Done 2026-11-19 (Rule 2 deviations):** `prime` 0.22.1 rejected the `src/` layout ("No environment Python file found"), so the package moved to a flat `cad_rl_env/` (`654aa6c`). Pushed as `sumanth/cad-rl-env@0.1.0` (PRIVATE). Hub smoke in `/tmp/cad-hub-smoke`: `prime env install sumanth/cad-rl-env` pulled `simready[bench]` 0.5.1 from git tag `v0.5.1` (`1e70789`; the plan's `simready[ocp]` extra is `bench`), then `vf-validate -n 5` eval and train both `valid_rate = 1.0`.
+
+- [x] **Step 1:** The user runs `prime login`. Check that the username is set on the profile.
+- [x] **Step 2:** The user runs `prime env push --visibility=PRIVATE` from the repo root. Claude supplies the exact command after checking `prime env push --help`.
+- [x] **Step 3:** Hub smoke, in a throwaway venv in `/tmp`: `prime env install <owner>/cad-rl-env`, then `vf-validate cad-rl-env -n 5`. Expected: gold pass and noop valid, which proves the pip-only install pulls `simready[ocp]` from the git tag.
 
 ### Task C3: Audit and go public (USER GATE)
 
