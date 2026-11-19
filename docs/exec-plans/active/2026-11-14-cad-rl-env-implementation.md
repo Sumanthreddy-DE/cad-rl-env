@@ -1927,22 +1927,24 @@ git add README.md && git commit -m "docs: README for the Hub page"
 
 ### Task C1: Model runs (USER GATE: spends API credit)
 
-- [ ] **Step 1:** Ask the user to check the Vultr balance (SimReady `vultr-budget`; it was $5 on 2026-10-05). The estimate is about 1,110 calls. The user confirms before the run.
-- [ ] **Step 2: Check the run flags.** Run `.venv/bin/vf-run cad-rl-env --help`. Expected: confirm the spelling of the model, client base URL, API-key variable, rollout count and output directory flags. `RunnerConfig` at v0.4.1 has `model` (`-m`), `client.base_url`, `client.api_key_var`, `num_rollouts`, `output_dir` (`-o`).
-- [ ] **Step 3: Smoke run.** Load the key into the environment without printing it. The user exports `VULTR_API_KEY` in their shell, or uses SimReady's redacted loader. Then:
+> **Done 2026-11-19 with deviations (Rule 2):** (1) Task C2's pin bump to `v0.5.1` ran first (`bc97f71`) so results carry the final checker. (2) Models changed by user decision: four small open models on Vultr (`qwen3.8-27b`, `nemotron-3-nano-omni-30b-a3b-reasoning`, `glm-5.3-flash`, `deepseek-v4.1-flash-1017`) instead of `glm-5.3` + `deepseek-v4.1-flash`; the frontier ceiling is cited from SimReady `bench_v1`. (3) Eval `max_tokens` raised 4096 → 16384 after the smoke showed truncation (`f180aa3`). Results: README § Results (`a49f370`).
+
+- [x] **Step 1:** Ask the user to check the Vultr balance (SimReady `vultr-budget`; it was $5 on 2026-10-05). The estimate is about 1,110 calls. The user confirms before the run.
+- [x] **Step 2: Check the run flags.** Run `.venv/bin/vf-run cad-rl-env --help`. Expected: confirm the spelling of the model, client base URL, API-key variable, rollout count and output directory flags. `RunnerConfig` at v0.4.1 has `model` (`-m`), `client.base_url`, `client.api_key_var`, `num_rollouts`, `output_dir` (`-o`).
+- [x] **Step 3: Smoke run.** Load the key into the environment without printing it. The user exports `VULTR_API_KEY` in their shell, or uses SimReady's redacted loader. Then:
   ```bash
   .venv/bin/vf-run cad-rl-env @ configs/eval.toml -m glm-5.3 --client.base-url https://api.vultrinference.com/v1 --client.api-key-var VULTR_API_KEY -n 3 -r 1 -o outputs
   ```
   Adjust the config-file syntax to what `--help` shows. Expected: 3 traces with `passed`/`partial` and funnel metrics, and no `GraderError`.
-- [ ] **Step 4: Full runs.** Run detached with a log: all 111 eval prompts, 5 rollouts each, for `glm-5.3` and then `deepseek-v4.1-flash`. Both ids were verified in SimReady `sp1-resume` (a2). Re-check them with a list-models call the same day.
-- [ ] **Step 5: Report.** From `outputs/*/traces.jsonl`, compute per model and phrasing:
+- [x] **Step 4: Full runs.** Run detached with a log: all 111 eval prompts, 5 rollouts each, for `glm-5.3` and then `deepseek-v4.1-flash`. Both ids were verified in SimReady `sp1-resume` (a2). Re-check them with a list-models call the same day.
+- [x] **Step 5: Report.** From `outputs/*/traces.jsonl`, compute per model and phrasing:
   - pass@1 (mean `passed`);
   - pass@5 (share of prompts with any pass);
   - the explicit − engineer gap;
   - the failure-class distribution.
 
   Write a small `scripts/report.py` with a test on a 3-trace fixture before using it on the real file. Put the table in README § Results, labelled with the model ids, dates, `CHECKER_VERSION` and the run's `simready` tag. If SimReady's `docs/validation/bench_v1.md` exists, compare against it and name the answer-channel difference (deviation 8). If it doesn't exist, say so.
-- [ ] **Step 6: Commit** the README update and `scripts/report.py` with its test.
+- [x] **Step 6: Commit** the README update and `scripts/report.py` with its test.
 
 ### Task C2: Private Hub push (USER GATE: outward-facing)
 
