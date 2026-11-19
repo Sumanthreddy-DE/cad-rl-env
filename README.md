@@ -152,3 +152,7 @@ bash scripts/lint-arch.sh
 - **Upstream checker & benchmark:** [Sumanthreddy-DE/simready](https://github.com/Sumanthreddy-DE/simready), installed via `simready[bench] @ git+https://github.com/Sumanthreddy-DE/simready@v0.5.1` (`CHECKER_VERSION = "1.0.0"`, OpenCASCADE via pip `cadquery-ocp`). `text-to-cad-rl` imports `simready.bench` and `simready.gen` directly and copies neither check logic nor `concepts_v1.jsonl`.
 - **Trusted DSL execution:** Follows SimReady ADR 0001 — models emit schema-validated JSON (`PartSpec`) executed by `simready.gen.build.build_shape` inside a killable `spawn` worker with atomic mailbox supervision.
 - **Engineering standards in `concepts_v1` and `train`:** ISO 273:1979 fastener clearance holes (`M2.5`–`M8` in `train`), plus ISO 286-2 limits and fits, ISO 7089 / DIN 125-1 washers, DIN 705 shaft collars, DIN 988 shim rings, ISO 4379 sleeve bushes, EN 60423 cable glands, NEMA 17 / NEMA 23 motor mounts, 608 bearings, HIWIN MGN12H carriages, Arduino Uno R3, and Raspberry Pi 4 mechanical drawings in `eval`.
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).

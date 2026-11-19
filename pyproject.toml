@@ -1,10 +1,12 @@
 [project]
 name = "text-to-cad-rl"
-version = "0.1.1"
+version = "0.1.2"
 description = "RL environment for text-to-CAD: models write a part as a JSON CAD program, graded on real OpenCASCADE B-rep geometry (dimensions, holes, features). verifiers v1, Prime Intellect Hub."
 tags = ["single-turn", "v1", "eval", "train", "3d", "cad", "verifiable", "rl-environment", "engineering"]
 keywords = ["reinforcement-learning", "rl-environment", "text-to-cad", "cad", "llm-evaluation", "verifiers", "opencascade", "brep", "mechanical-engineering"]
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "verifiers>=0.4.1",
     "pydantic>=2",
