@@ -13,4 +13,4 @@ id = "null"
 type = "subprocess"
 
 [sampling]
-max_tokens = 4096
+max_tokens = 16384  # matches SimReady bench_v1; 4096 truncated reasoning models (smoke 2026-11-19)
